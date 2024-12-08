@@ -1,0 +1,14 @@
+services:
+  dev-postgres:
+    image: postgres:15.1-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PW}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    restart: always
+    networks:
+      - c0fee-api-network
+networks:
+  c0fee-api-network:
