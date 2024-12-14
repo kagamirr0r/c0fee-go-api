@@ -57,6 +57,9 @@ func (uc *userController) SignUp(c echo.Context) error {
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
+	if err := c.Validate(user); err != nil {
+		return err
+	}
 
 	resUser, err := uc.uu.SignUp(user)
 	if err != nil {
