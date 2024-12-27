@@ -11,37 +11,25 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-var jst, _ = time.LoadLocation("Asia/Tokyo")
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		validationErrors := err.(validator.ValidationErrors)
-		fieldErrors := make([]controller.FieldError, len(validationErrors))
-
-		for i, fieldErr := range validationErrors {
-			fieldErrors[i] = controller.FieldError{
-				Field:   fieldErr.Field(),
-				Message: fieldErr.Tag(),
+func CheckAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		authHeader := c.Request().Header.Get("Authorization")
+		if authHeader == "" {
+			errorResponse := controller.Response{
+				Code:      "BAD_REQUEST",
+				Message:   "Invalid request parameters.",
+				Errors:    []controller.FieldError{{Field: "", Message: ""}},
+				Content:   nil,
+				Timestamp: time.Now().In(jst).Format(time.RFC3339),
 			}
+			return c.JSON(http.StatusUnauthorized, errorResponse)
 		}
-
-		errorResponse := controller.Response{
-			Code:      "BAD_REQUEST",
-			Message:   "Invalid request parameters.",
-			Errors:    fieldErrors,
-			Content:   nil,
-			Timestamp: time.Now().In(jst).Format(time.RFC3339),
-		}
-		return echo.NewHTTPError(http.StatusBadRequest, errorResponse)
+		return next(c)
 	}
-	return nil
 }
 
 func setupMiddleware(e *echo.Echo) {
+	e.Use(CheckAuthorization)
 	// Add body dump middleware for debugging
 	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
 		headers := c.Request().Header
@@ -71,13 +59,12 @@ func setupMiddleware(e *echo.Echo) {
 func defineRoutes(e *echo.Echo, uc controller.IUserController) {
 	e.POST("/signup", uc.SignUp)
 	e.POST("/signin", uc.SignIn)
-	// Uncomment if LogOut is implemented
 	// e.POST("/logout", uc.LogOut)
 }
 
 func NewRouter(uc controller.IUserController) *echo.Echo {
 	e := echo.New()
-	e.Validator = &CustomValidator{validator: validator.New()}
+	e.Validator = &CustomValidator{validator: validator.New()} //custom_validator.go
 
 	// Setup Middleware
 	setupMiddleware(e)
