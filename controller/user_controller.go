@@ -13,8 +13,8 @@ import (
 )
 
 type IUserController interface {
-	SignUp(c echo.Context) error
-	SignIn(c echo.Context) error
+	Create(c echo.Context) error
+	Show(c echo.Context) error
 	// LogOut(c echo.Context) error
 }
 
@@ -52,7 +52,7 @@ func generateErrorResponse(code, message string, errors []FieldError) Response {
 	}
 }
 
-func (uc *userController) SignUp(c echo.Context) error {
+func (uc *userController) Create(c echo.Context) error {
 	var user model.User
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
@@ -61,7 +61,7 @@ func (uc *userController) SignUp(c echo.Context) error {
 		return err
 	}
 
-	resUser, err := uc.uu.SignUp(user)
+	resUser, err := uc.uu.Create(user)
 	if err != nil {
 		var fieldErrors []FieldError
 		if errors.Is(err, repository.ErrDuplicateId) {
@@ -86,27 +86,17 @@ func (uc *userController) SignUp(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
-func (uc *userController) SignIn(c echo.Context) error {
+func (uc *userController) Show(c echo.Context) error {
 	var user model.User
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	resUser, err := uc.uu.SignIn(user)
+	resUser, err := uc.uu.Show(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	// cookie := new(http.Cookie)
-	// cookie.Name = "token"
-	// cookie.Value = tokenString
-	// cookie.Expires = time.Now().Add(24 * time.Hour)
-	// cookie.Path = "/"
-	// cookie.Domain = os.Getenv("API_DOMEIN")
-
-	// cookie.HttpOnly = true
-	// cookie.SameSite = http.SameSiteNoneMode
-	// c.SetCookie(cookie)
 	return c.JSON(http.StatusOK, resUser)
 }
 

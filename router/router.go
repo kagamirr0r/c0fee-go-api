@@ -29,7 +29,6 @@ func CheckAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func setupMiddleware(e *echo.Echo) {
-	e.Use(CheckAuthorization)
 	// Add body dump middleware for debugging
 	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
 		headers := c.Request().Header
@@ -54,11 +53,13 @@ func setupMiddleware(e *echo.Echo) {
 			return nil
 		},
 	}))
+
+	e.Use(CheckAuthorization)
 }
 
 func defineRoutes(e *echo.Echo, uc controller.IUserController) {
-	e.POST("/signup", uc.SignUp)
-	e.POST("/signin", uc.SignIn)
+	e.POST("/users", uc.Create)
+	e.GET("/users/:id", uc.Show)
 	// e.POST("/logout", uc.LogOut)
 }
 

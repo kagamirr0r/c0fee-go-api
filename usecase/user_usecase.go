@@ -6,8 +6,8 @@ import (
 )
 
 type IUserUsecase interface {
-	SignUp(user model.User) (model.UserResponse, error)
-	SignIn(user model.User) (model.UserResponse, error)
+	Create(user model.User) (model.UserResponse, error)
+	Show(user model.User) (model.UserResponse, error)
 }
 
 type userUsecase struct {
@@ -18,7 +18,7 @@ func NewUserUsecase(ur repository.IUserRepository) IUserUsecase {
 	return &userUsecase{ur}
 }
 
-func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, error) {
+func (uu *userUsecase) Create(user model.User) (model.UserResponse, error) {
 	newUser := model.User{ID: user.ID, Name: user.Name}
 	if err := uu.ur.CreateUser(&newUser); err != nil {
 		return model.UserResponse{}, err
@@ -26,7 +26,7 @@ func (uu *userUsecase) SignUp(user model.User) (model.UserResponse, error) {
 	return model.UserResponse{ID: newUser.ID, Name: newUser.Name}, nil
 }
 
-func (uu *userUsecase) SignIn(user model.User) (model.UserResponse, error) {
+func (uu *userUsecase) Show(user model.User) (model.UserResponse, error) {
 	storedUser := model.User{}
 	if err := uu.ur.GetUserById(&storedUser, user.ID); err != nil {
 		return model.UserResponse{}, err
