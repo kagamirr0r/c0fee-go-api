@@ -15,5 +15,5 @@ type User struct {
 
 type UserResponse struct {
 	ID   uuid.UUID `json:"id" gorm:"primary_key;type:uuid;"`
-	Name string    `json:"name" gorm:"unique"`
+	Name string    `json:"name" gorm:"unique" validate:"required"`
 }
