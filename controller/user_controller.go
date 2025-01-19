@@ -42,11 +42,14 @@ func NewUserController(uu usecase.IUserUsecase) IUserController {
 var jst, _ = time.LoadLocation("Asia/Tokyo")
 
 // 共通エラーレスポンス生成関数
-func generateErrorResponse(code, message string, errors []FieldError) Response {
+func generateErrorResponse(code, message string, fieldErrors []FieldError) Response {
+	if len(fieldErrors) == 0 {
+			fieldErrors = []FieldError{} 
+	}
 	return Response{
 		Code:      code,
 		Message:   message,
-		Errors:    errors,
+		Errors:    fieldErrors,
 		Content:   nil,
 		Timestamp: time.Now().In(jst).Format(time.RFC3339),
 	}
