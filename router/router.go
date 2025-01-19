@@ -4,25 +4,57 @@ import (
 	"c0fee-api/controller"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func CheckAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
+func generateErrorResponse(code string, message string) controller.Response {
+	errorResponse := controller.Response{
+		Code:      code,
+		Message:   message,
+		Errors:    []controller.FieldError{},
+		Content:   nil,
+		Timestamp: time.Now().In(jst).Format(time.RFC3339),
+	}
+	return errorResponse
+}
+
+func ValidateAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
+	jwtSrecret := os.Getenv("SUPABASE_JWT_SECRET")
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
-		if authHeader == "" {
-			errorResponse := controller.Response{
-				Code:      "BAD_REQUEST",
-				Message:   "Invalid request parameters.",
-				Errors:    []controller.FieldError{{Field: "", Message: ""}},
-				Content:   nil,
-				Timestamp: time.Now().In(jst).Format(time.RFC3339),
+
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			return c.JSON(http.StatusUnauthorized, generateErrorResponse("Unauthorized", "Invalid Request Parameters"))
+		}
+
+		tokenString := authHeader[len("Bearer "):]
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// HS256 アルゴリズムを使用しているか確認
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("予期しない署名方法: %v", token.Header["alg"])
 			}
-			return c.JSON(http.StatusUnauthorized, errorResponse)
+      // SupabaseのJWTシークレットを使用
+      return []byte(jwtSrecret), nil
+    })
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, generateErrorResponse("BAD_REQUEST", "Invalid Request Parameters"))
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			userMetadata, metaOk := claims["user_metadata"].(map[string]interface{})
+			sub, subOk := userMetadata["sub"].(string)
+			userId := c.Request().Header.Get("X-C0fee-User-ID")
+			if sub != userId || !metaOk || !subOk {
+				return c.JSON(http.StatusBadRequest, generateErrorResponse("BAD_REQUEST", "User ID mismatch"))
+			}
 		}
 		return next(c)
 	}
@@ -54,7 +86,7 @@ func setupMiddleware(e *echo.Echo) {
 		},
 	}))
 
-	e.Use(CheckAuthorization)
+	e.Use(ValidateAuthorization)
 }
 
 func defineRoutes(e *echo.Echo, uc controller.IUserController) {
