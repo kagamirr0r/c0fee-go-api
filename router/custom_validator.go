@@ -30,7 +30,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 
 		errorResponse := controller.Response{
 			Code:      "BAD_REQUEST",
-			Message:   "Invalid request parameters.",
+			Message:   "Invalid request parameters",
 			Errors:    fieldErrors,
 			Content:   nil,
 			Timestamp: time.Now().In(jst).Format(time.RFC3339),
