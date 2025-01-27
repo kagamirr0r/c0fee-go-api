@@ -14,10 +14,6 @@ type userUsecase struct {
 	ur repository.IUserRepository
 }
 
-func NewUserUsecase(ur repository.IUserRepository) IUserUsecase {
-	return &userUsecase{ur}
-}
-
 func (uu *userUsecase) Create(user model.User) (model.UserResponse, error) {
 	newUser := model.User{ID: user.ID, Name: user.Name}
 	if err := uu.ur.CreateUser(&newUser); err != nil {
@@ -32,4 +28,8 @@ func (uu *userUsecase) Show(user model.User) (model.UserResponse, error) {
 		return model.UserResponse{}, err
 	}
 	return model.UserResponse{ID: storedUser.ID, Name: storedUser.Name}, nil
+}
+
+func NewUserUsecase(ur repository.IUserRepository) IUserUsecase {
+	return &userUsecase{ur}
 }
