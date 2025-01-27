@@ -10,9 +10,17 @@ import (
 
 func main() {
 	db := db.NewDB()
+
+	// users
 	userRepository := repository.NewUserRepository(db)
 	userUseCase := usecase.NewUserUsecase(userRepository)
 	userController := controller.NewUserController(userUseCase)
-	e := router.NewRouter(userController)
+
+	// beans
+	beanRepository := repository.NewBeanRepository(db)
+	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository)
+	beanController := controller.NewBeanController(beanUseCase)
+
+	e := router.NewRouter(userController, beanController)
 	e.Logger.Fatal(e.Start(":8080"))
 }
