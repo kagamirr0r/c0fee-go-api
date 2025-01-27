@@ -7,7 +7,7 @@ import (
 
 type IUserUsecase interface {
 	Create(user model.User) (model.UserResponse, error)
-	Show(user model.User) (model.UserResponse, error)
+	Read(user model.User) (model.UserResponse, error)
 }
 
 type userUsecase struct {
@@ -22,7 +22,7 @@ func (uu *userUsecase) Create(user model.User) (model.UserResponse, error) {
 	return model.UserResponse{ID: newUser.ID, Name: newUser.Name}, nil
 }
 
-func (uu *userUsecase) Show(user model.User) (model.UserResponse, error) {
+func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 	storedUser := model.User{}
 	if err := uu.ur.GetUserById(&storedUser, user.ID); err != nil {
 		return model.UserResponse{}, err

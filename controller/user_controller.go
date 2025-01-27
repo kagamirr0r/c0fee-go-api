@@ -13,7 +13,7 @@ import (
 
 type IUserController interface {
 	Create(c echo.Context) error
-	Show(c echo.Context) error
+	Read(c echo.Context) error
 	// LogOut(c echo.Context) error
 }
 
@@ -61,13 +61,13 @@ func (uc *userController) Create(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
-func (uc *userController) Show(c echo.Context) error {
+func (uc *userController) Read(c echo.Context) error {
 	var user model.User
 	if err := c.Bind(&user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	resUser, err := uc.uu.Show(user)
+	resUser, err := uc.uu.Read(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
