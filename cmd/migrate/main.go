@@ -30,10 +30,17 @@ func main() {
 
 	// コマンドライン引数を解析してgooseコマンドを実行
 	if len(os.Args) < 2 {
-		log.Fatalf("usage: %s COMMAND", os.Args[0])
+		log.Fatalf("usage: %s", "\n up\n down\n status\n version\n")
 	}
 
-	if err := goose.Run(os.Args[1], db, "db/migrations"); err != nil {
+	var args []string
+	if len(os.Args) >= 2 {
+		for _, arg := range os.Args[2:] {
+			args = append(args, arg)
+		}
+	}
+
+	if err := goose.Run(os.Args[1], db, "db/migrations", args...); err != nil {
 		log.Fatalf("failed to run goose command: %v", err)
 	}
 }
