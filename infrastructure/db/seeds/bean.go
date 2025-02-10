@@ -26,6 +26,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			Varieties:       []model.Variety{{Variety: "Heirloom"}},
 			Area:            "Yirgacheffe",
 			RoastLevel:      model.Medium,
+			ImageKey:        "1/image.jpg",
 		},
 		{
 			Name:            "Colombian Supremo",
@@ -36,6 +37,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			Varieties:       []model.Variety{{Variety: "Caturra"}},
 			Area:            "Antioquia",
 			RoastLevel:      model.Dark,
+			ImageKey:        "2/image.jpg",
 		},
 		{
 			Name:            "Kenyan AA",
@@ -46,6 +48,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			Varieties:       []model.Variety{{Variety: "SL28"}},
 			Area:            "Nyeri",
 			RoastLevel:      model.Light,
+			ImageKey:        "3/image.jpg",
 		},
 		{
 			Name:            "Sumatra Mandheling",
@@ -56,6 +59,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			Varieties:       []model.Variety{{Variety: "Typica"}},
 			Area:            "Aceh",
 			RoastLevel:      model.MediumDark,
+			ImageKey:        "4/image.jpg",
 		},
 		{
 			Name:            "Guatemalan Antigua",
@@ -66,6 +70,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			Varieties:       []model.Variety{{Variety: "Bourbon"}},
 			Area:            "Antigua",
 			RoastLevel:      model.MediumLight,
+			ImageKey:        "5/image.jpg",
 		},
 	}
 

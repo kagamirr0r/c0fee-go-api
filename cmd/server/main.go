@@ -2,7 +2,8 @@ package main
 
 import (
 	"c0fee-api/controller"
-	"c0fee-api/db"
+	"c0fee-api/infrastructure/db"
+	"c0fee-api/infrastructure/s3"
 	"c0fee-api/repository"
 	"c0fee-api/router"
 	"c0fee-api/usecase"

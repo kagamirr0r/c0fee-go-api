@@ -1,8 +1,8 @@
 package main
 
 import (
-	"c0fee-api/db"
-	"c0fee-api/db/seeds"
+	"c0fee-api/infrastructure/db"
+	"c0fee-api/infrastructure/db/seeds"
 	"log"
 )
 

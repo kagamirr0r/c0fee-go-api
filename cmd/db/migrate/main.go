@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	_ "c0fee-api/db/migrations" // マイグレーション関数の登録
+	_ "c0fee-api/infrastructure/db/migrations" // マイグレーション関数の登録
 
 	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
@@ -35,12 +35,10 @@ func main() {
 
 	var args []string
 	if len(os.Args) >= 2 {
-		for _, arg := range os.Args[2:] {
-			args = append(args, arg)
-		}
+		args = append(args, os.Args[2:]...)
 	}
 
-	if err := goose.Run(os.Args[1], db, "db/migrations", args...); err != nil {
+	if err := goose.Run(os.Args[1], db, "infrastructure/db/migrations", args...); err != nil {
 		log.Fatalf("failed to run goose command: %v", err)
 	}
 }

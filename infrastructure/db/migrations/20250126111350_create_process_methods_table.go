@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"c0fee-api/db"
+	"c0fee-api/infrastructure/db"
 	"c0fee-api/model"
 	"context"
 	"database/sql"
