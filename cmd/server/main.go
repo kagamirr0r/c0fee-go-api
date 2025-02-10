@@ -7,14 +7,19 @@ import (
 	"c0fee-api/repository"
 	"c0fee-api/router"
 	"c0fee-api/usecase"
+	"log"
 )
 
 func main() {
 	db := db.NewDB()
+	s3Client, err := s3.NewS3Client()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// users
 	userRepository := repository.NewUserRepository(db)
-	userUseCase := usecase.NewUserUsecase(userRepository)
+	userUseCase := usecase.NewUserUsecase(userRepository, s3Client)
 	userController := controller.NewUserController(userUseCase)
 
 	// beans
