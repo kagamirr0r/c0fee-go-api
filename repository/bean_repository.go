@@ -17,7 +17,14 @@ type beanRepository struct {
 
 func (br *beanRepository) GetBeansByUserId(userID uuid.UUID) ([]model.Bean, error) {
 	var beans []model.Bean
-	if err := br.db.Where("user_id = ?", userID).Find(&beans).Error; err != nil {
+	if err := br.db.
+		Preload("User").
+		Preload("Roaster").
+		Preload("ProcessMethod").
+		Preload("Countries").
+		Preload("Varieties").
+		Where("user_id = ?", userID).
+		Find(&beans).Error; err != nil {
 		return []model.Bean{}, err
 	}
 	return beans, nil
