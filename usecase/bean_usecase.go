@@ -6,7 +6,7 @@ import (
 )
 
 type IBeanUsecase interface {
-	ListByUser(user model.User) (model.BeanResponse, error)
+	ListByUser(user model.User) (model.BeansResponse, error)
 }
 
 type beanUsecase struct {
@@ -14,17 +14,34 @@ type beanUsecase struct {
 	br repository.IBeanRepository
 }
 
-func (bu *beanUsecase) ListByUser(user model.User) (model.BeanResponse, error) {
+func (bu *beanUsecase) ListByUser(user model.User) (model.BeansResponse, error) {
 	targetUser := model.User{}
 	if err := bu.ur.GetUserById(&targetUser, user.ID); err != nil {
-		return model.BeanResponse{}, err
+		return model.BeansResponse{}, err
 	}
 
 	beans, err := bu.br.GetBeansByUserId(targetUser.ID)
 	if err != nil {
-		return model.BeanResponse{}, err
+		return model.BeansResponse{}, err
 	}
-	return model.BeanResponse{Beans: beans}, nil
+
+	// Convert []Bean to []BeanResponse
+	beanResponses := make([]model.BeanResponse, len(beans))
+	for i, bean := range beans {
+		beanResponses[i] = model.BeanResponse{
+			ID:            bean.ID,
+			Name:          bean.Name,
+			User:          bean.User,
+			Roaster:       bean.Roaster,
+			ProcessMethod: bean.ProcessMethod,
+			Countries:     bean.Countries,
+			Varieties:     bean.Varieties,
+			Area:          bean.Area,
+			RoastLevel:    bean.RoastLevel,
+		}
+	}
+
+	return model.BeansResponse{Beans: beanResponses}, nil
 }
 
 func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository) IBeanUsecase {

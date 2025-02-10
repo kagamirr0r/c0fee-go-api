@@ -30,7 +30,6 @@ func ValidateAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
 			return []byte(jwtSrecret), nil
 		})
 
-		fmt.Println("err", err)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, controller.GenerateErrorResponse("BAD_REQUEST", "Invalid Request Parameters", []controller.FieldError{}))
 		}
