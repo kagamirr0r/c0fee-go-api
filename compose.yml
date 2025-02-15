@@ -35,7 +35,7 @@ services:
       mc admin user add local "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}" &&
       mc admin policy attach local readwrite --user "${AWS_ACCESS_KEY_ID}" &&
       mc cp /assets/images/users/avatar.png local/"${S3_BUCKET}"/users/"${TEST_USER_ID}"/avatar.png &&
-      mc cp /assets/images/beans/image.png local/"${S3_BUCKET}"/beans/1/image.png &&
+      mc cp --recursive /assets/images/beans/ local/"${S3_BUCKET}"/beans/ &&
       exit 0
       "
 volumes:
