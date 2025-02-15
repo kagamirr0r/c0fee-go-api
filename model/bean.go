@@ -37,16 +37,16 @@ type Bean struct {
 }
 
 type BeanResponse struct {
-	ID            uint           `json:"id" param:"id" gorm:"primary_key;" validate:"required"`
+	ID            uint           `json:"id" param:"id"`
 	Name          string         `json:"name"`
 	User          User           `json:"user"`
 	Roaster       Roaster        `json:"roaster"`
 	ProcessMethod ProcessMethod  `json:"process_method"`
-	Countries     []Country      `json:"countries" gorm:"many2many:bean_countries;"`
-	Varieties     []Variety      `json:"varieties" gorm:"many2many:bean_varieties;"`
+	Countries     []Country      `json:"countries"`
+	Varieties     []Variety      `json:"varieties"`
 	Area          string         `json:"area"`
-	RoastLevel    RoastLevelType `json:"roast_level" gorm:"not null;default:Medium" validate:"required"`
-	ImageUrl      string         `json:"image_url,omitempty"`
+	RoastLevel    RoastLevelType `json:"roast_level"`
+	ImageURL      string         `json:"image_url,omitempty"`
 }
 
 type BeansResponse struct {

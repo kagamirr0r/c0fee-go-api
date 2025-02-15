@@ -24,7 +24,7 @@ func main() {
 
 	// beans
 	beanRepository := repository.NewBeanRepository(db)
-	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository)
+	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Client)
 	beanController := controller.NewBeanController(beanUseCase)
 
 	e := router.NewRouter(userController, beanController)

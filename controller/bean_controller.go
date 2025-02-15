@@ -4,21 +4,36 @@ import (
 	"c0fee-api/model"
 	"c0fee-api/usecase"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
 
 type IBeanController interface {
+	Read(c echo.Context) error
 	ListByUser(c echo.Context) error
-	// LogOut(c echo.Context) error
 }
 
 type beanController struct {
 	bu usecase.IBeanUsecase
 }
 
-func NewBeanController(bu usecase.IBeanUsecase) IBeanController {
-	return &beanController{bu}
+func (bc *beanController) Read(c echo.Context) error {
+	id := c.Param("id")
+
+	// Convert string ID to uint
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid ID format")
+	}
+
+	bean := model.Bean{ID: uint(idUint)}
+	resBean, err := bc.bu.Read(bean)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, resBean)
 }
 
 func (bc *beanController) ListByUser(c echo.Context) error {
@@ -27,10 +42,14 @@ func (bc *beanController) ListByUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	resBean, err := bc.bu.ListByUser(user)
+	resBeans, err := bc.bu.ListByUser(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, resBean)
+	return c.JSON(http.StatusOK, resBeans)
+}
+
+func NewBeanController(bu usecase.IBeanUsecase) IBeanController {
+	return &beanController{bu}
 }
