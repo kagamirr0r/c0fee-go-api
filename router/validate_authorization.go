@@ -1,7 +1,7 @@
 package router
 
 import (
-	"c0fee-api/controller"
+	"c0fee-api/common"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,7 +17,7 @@ func ValidateAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
 		authHeader := c.Request().Header.Get("Authorization")
 
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.JSON(http.StatusUnauthorized, controller.GenerateErrorResponse("Unauthorized", "Invalid Request Parameters", []controller.FieldError{}))
+			return c.JSON(http.StatusUnauthorized, common.GenerateErrorResponse("Unauthorized", "Invalid Request Parameters", []common.FieldError{}))
 		}
 
 		tokenString := authHeader[len("Bearer "):]
@@ -31,7 +31,7 @@ func ValidateAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, controller.GenerateErrorResponse("BAD_REQUEST", "Invalid Request Parameters", []controller.FieldError{}))
+			return c.JSON(http.StatusBadRequest, common.GenerateErrorResponse("BAD_REQUEST", "Invalid Request Parameters", []common.FieldError{}))
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -39,7 +39,7 @@ func ValidateAuthorization(next echo.HandlerFunc) echo.HandlerFunc {
 			sub, subOk := userMetadata["sub"].(string)
 			userId := c.Request().Header.Get("X-C0fee-User-ID")
 			if sub != userId || !metaOk || !subOk {
-				return c.JSON(http.StatusBadRequest, controller.GenerateErrorResponse("BAD_REQUEST", "User ID mismatch", []controller.FieldError{}))
+				return c.JSON(http.StatusBadRequest, common.GenerateErrorResponse("BAD_REQUEST", "User ID mismatch", []common.FieldError{}))
 			}
 		}
 		return next(c)

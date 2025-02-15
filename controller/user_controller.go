@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/model"
 	"c0fee-api/repository"
 	"c0fee-api/usecase"
@@ -25,8 +26,6 @@ func NewUserController(uu usecase.IUserUsecase) IUserController {
 	return &userController{uu}
 }
 
-var jst, _ = time.LoadLocation("Asia/Tokyo")
-
 func (uc *userController) Create(c echo.Context) error {
 	var user model.User
 	if err := c.Bind(&user); err != nil {
@@ -38,25 +37,25 @@ func (uc *userController) Create(c echo.Context) error {
 
 	resUser, err := uc.uu.Create(user)
 	if err != nil {
-		var fieldErrors []FieldError
+		var fieldErrors []common.FieldError
 		if errors.Is(err, repository.ErrDuplicateId) {
-			fieldErrors = []FieldError{{Field: "id", Message: "ID already exists"}}
-			return c.JSON(http.StatusConflict, GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
+			fieldErrors = []common.FieldError{{Field: "id", Message: "ID already exists"}}
+			return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
 		}
 		if errors.Is(err, repository.ErrDuplicateName) {
-			fieldErrors = []FieldError{{Field: "name", Message: "Name already exists"}}
-			return c.JSON(http.StatusConflict, GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
+			fieldErrors = []common.FieldError{{Field: "name", Message: "Name already exists"}}
+			return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
 		}
-		fieldErrors = []FieldError{{Field: "", Message: err.Error()}}
-		return c.JSON(http.StatusInternalServerError, GenerateErrorResponse("INTERNAL_SERVER_ERROR", "Something went wrong", fieldErrors))
+		fieldErrors = []common.FieldError{{Field: "", Message: err.Error()}}
+		return c.JSON(http.StatusInternalServerError, common.GenerateErrorResponse("INTERNAL_SERVER_ERROR", "Something went wrong", fieldErrors))
 	}
 
-	response := Response{
+	response := common.Response{
 		Code:      "CREATED",
 		Message:   "User created",
-		Errors:    []FieldError{},
+		Errors:    []common.FieldError{},
 		Content:   resUser,
-		Timestamp: time.Now().In(jst).Format(time.RFC3339),
+		Timestamp: time.Now().In(common.Jst).Format(time.RFC3339),
 	}
 	return c.JSON(http.StatusCreated, response)
 }
