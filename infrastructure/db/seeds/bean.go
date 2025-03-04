@@ -1,6 +1,7 @@
 package seeds
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/model"
 	"os"
 
@@ -22,61 +23,72 @@ func CreateBeanSeeds(db *gorm.DB) error {
 		userId = uuid.MustParse(testID)
 	}
 
+	var varieties []model.Variety
+	if err := db.Find(&varieties).Error; err != nil {
+		return err
+	}
+
 	beans := []model.Bean{
 		{
-			Name:            "Ethiopian Yirgacheffe",
+			Name:            common.StoPoint("Ethiopian Yirgacheffe"),
 			UserID:          userId,
 			RoasterID:       1,
-			ProcessMethodID: 1,
-			Countries:       []model.Country{{Name: "Ethiopia", Code: "ET"}},
-			Varieties:       []model.Variety{{Variety: "Heirloom"}},
-			Area:            "Yirgacheffe",
+			CountryID:       1,
+			AreaID:          common.ItoPoint(1),
+			Varieties:       []model.Variety{varieties[0]},
+			ProcessMethodID: common.ItoPoint(1),
 			RoastLevel:      model.Medium,
-			ImageKey:        "1/image.png",
+			ImageKey:        common.StoPoint("1/image.png"),
 		},
 		{
-			Name:            "Colombian Supremo",
+			Name:            common.StoPoint("Colombian"),
 			UserID:          userId,
 			RoasterID:       2,
-			ProcessMethodID: 2,
-			Countries:       []model.Country{{Name: "Colombia", Code: "CO"}},
-			Varieties:       []model.Variety{{Variety: "Caturra"}},
-			Area:            "Antioquia",
+			CountryID:       2,
+			AreaID:          common.ItoPoint(2),
+			FarmID:          common.ItoPoint(1),
+			FarmerID:        common.ItoPoint(1),
+			Varieties:       []model.Variety{varieties[9]},
+			ProcessMethodID: common.ItoPoint(2),
 			RoastLevel:      model.Dark,
-			ImageKey:        "2/image.png",
+			ImageKey:        common.StoPoint("2/image.png"),
 		},
 		{
-			Name:            "Kenyan AA",
+			Name:            common.StoPoint("ROI Farm Washed"),
 			UserID:          userId,
 			RoasterID:       3,
-			ProcessMethodID: 3,
-			Countries:       []model.Country{{Name: "Kenya", Code: "KE"}},
-			Varieties:       []model.Variety{{Variety: "SL28"}},
-			Area:            "Nyeri",
+			CountryID:       3,
+			AreaID:          common.ItoPoint(3),
+			FarmID:          common.ItoPoint(2),
+			FarmerID:        common.ItoPoint(2),
+			Varieties:       []model.Variety{varieties[5], varieties[6]},
+			ProcessMethodID: common.ItoPoint(3),
 			RoastLevel:      model.Light,
-			ImageKey:        "3/image.png",
+			ImageKey:        common.StoPoint("3/image.png"),
 		},
 		{
-			Name:            "Sumatra Mandheling",
+			Name:            common.StoPoint("MandhelingG1 Toba Berkah"),
 			UserID:          userId,
 			RoasterID:       4,
-			ProcessMethodID: 4,
-			Countries:       []model.Country{{Name: "Indonesia", Code: "ID"}},
-			Varieties:       []model.Variety{{Variety: "Typica"}},
-			Area:            "Aceh",
+			CountryID:       4,
+			AreaID:          common.ItoPoint(4),
+			FarmID:          common.ItoPoint(3),
+			Varieties:       []model.Variety{varieties[2]},
+			ProcessMethodID: common.ItoPoint(3),
 			RoastLevel:      model.MediumDark,
-			ImageKey:        "4/image.png",
+			ImageKey:        common.StoPoint("4/image.png"),
 		},
 		{
-			Name:            "Guatemalan Antigua",
 			UserID:          userId,
 			RoasterID:       5,
-			ProcessMethodID: 5,
-			Countries:       []model.Country{{Name: "Guatemala", Code: "GT"}},
-			Varieties:       []model.Variety{{Variety: "Bourbon"}},
-			Area:            "Antigua",
+			CountryID:       5,
+			AreaID:          common.ItoPoint(5),
+			FarmID:          common.ItoPoint(4),
+			FarmerID:        common.ItoPoint(4),
+			Varieties:       []model.Variety{varieties[7]},
+			ProcessMethodID: common.ItoPoint(5),
 			RoastLevel:      model.MediumLight,
-			ImageKey:        "5/image.png",
+			ImageKey:        common.StoPoint("5/image.png"),
 		},
 	}
 

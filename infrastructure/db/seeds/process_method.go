@@ -8,11 +8,13 @@ import (
 
 func CreateProcessMethodSeeds(db *gorm.DB) error {
 	methods := []model.ProcessMethod{
-		{Method: "Natural"},
-		{Method: "Washed"},
-		{Method: "Honey"},
-		{Method: "Wet-Hulled"},
-		{Method: "Pulped Natural"},
+		{ID: 1, Method: "Natural"},
+		{ID: 2, Method: "Anaerobic Natural"},
+		{ID: 3, Method: "Washed"},
+		{ID: 4, Method: "Smatra"},
+		{ID: 5, Method: "Honey"},
+		{ID: 6, Method: "Wet-Hulled"},
+		{ID: 7, Method: "Pulped Natural"},
 	}
 
 	for _, method := range methods {

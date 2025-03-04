@@ -8,11 +8,11 @@ import (
 
 func CreateRoasterSeeds(db *gorm.DB) error {
 	roasters := []model.Roaster{
-		{Name: "Starbucks", Address: "Seattle's Pike Place Market", WebURL: "https://archive.starbucks.com"},
-		{Name: "Blue Bottle Coffee", Address: "Oakland, California", WebURL: "https://bluebottlecoffee.com"},
-		{Name: "Stumptown Coffee Roasters", Address: "Portland, Oregon", WebURL: "https://www.stumptowncoffee.com"},
-		{Name: "Intelligentsia Coffee", Address: "Chicago, Illinois", WebURL: "https://www.intelligentsiacoffee.com"},
-		{Name: "Counter Culture Coffee", Address: "Durham, North Carolina", WebURL: "https://counterculturecoffee.com"},
+		{ID: 1, Name: "Starbucks", Address: "Seattle's Pike Place Market", WebURL: "https://archive.starbucks.com"},
+		{ID: 2, Name: "Blue Bottle Coffee", Address: "Oakland, California", WebURL: "https://bluebottlecoffee.com"},
+		{ID: 3, Name: "Stumptown Coffee Roasters", Address: "Portland, Oregon", WebURL: "https://www.stumptowncoffee.com"},
+		{ID: 4, Name: "Intelligentsia Coffee", Address: "Chicago, Illinois", WebURL: "https://www.intelligentsiacoffee.com"},
+		{ID: 5, Name: "Counter Culture Coffee", Address: "Durham, North Carolina", WebURL: "https://counterculturecoffee.com"},
 	}
 
 	for _, roaster := range roasters {
