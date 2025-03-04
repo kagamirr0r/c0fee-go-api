@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/model"
 	"c0fee-api/repository"
 	"context"
@@ -46,7 +47,7 @@ func (bu *beanUsecase) Read(bean model.Bean) (model.BeanResponse, error) {
 		return model.BeanResponse{}, err
 	}
 
-	imageURL, err := bu.generatePresignedURL(storedBean.ImageKey)
+	imageURL, err := bu.generatePresignedURL(*storedBean.ImageKey)
 	if err != nil {
 		return model.BeanResponse{}, err
 	}
@@ -57,11 +58,14 @@ func (bu *beanUsecase) Read(bean model.Bean) (model.BeanResponse, error) {
 		User:          storedBean.User,
 		Roaster:       storedBean.Roaster,
 		ProcessMethod: storedBean.ProcessMethod,
-		Countries:     storedBean.Countries,
+		Country:       storedBean.Country,
 		Varieties:     storedBean.Varieties,
-		Area:          storedBean.Area,
 		RoastLevel:    storedBean.RoastLevel,
-		ImageURL:      imageURL,
+		Area:          storedBean.Area,
+		Farm:          storedBean.Farm,
+		Farmer:        storedBean.Farmer,
+		BeanRatings:   storedBean.BeanRatings,
+		ImageURL:      common.StoPoint(imageURL),
 	}, nil
 }
 
@@ -76,28 +80,29 @@ func (bu *beanUsecase) ListByUser(user model.User) (model.BeansResponse, error) 
 		return model.BeansResponse{}, err
 	}
 
-	// Convert []Bean to []BeanResponse
 	beanResponses := make([]model.BeanResponse, len(beans))
 	for i, bean := range beans {
-		imageURL, err := bu.generatePresignedURL(bean.ImageKey)
+		imageURL, err := bu.generatePresignedURL(*bean.ImageKey)
 		if err != nil {
 			return model.BeansResponse{}, err
 		}
+
 		beanResponses[i] = model.BeanResponse{
 			ID:            bean.ID,
 			Name:          bean.Name,
-			User:          bean.User,
 			Roaster:       bean.Roaster,
 			ProcessMethod: bean.ProcessMethod,
-			Countries:     bean.Countries,
+			Country:       bean.Country,
 			Varieties:     bean.Varieties,
 			Area:          bean.Area,
+			Farm:          bean.Farm,
+			Farmer:        bean.Farmer,
 			RoastLevel:    bean.RoastLevel,
-			ImageURL:      imageURL,
+			ImageURL:      common.StoPoint(imageURL),
 		}
 	}
 
-	return model.BeansResponse{Beans: beanResponses}, nil
+	return model.BeansResponse{Beans: beanResponses, Count: uint(len(beans))}, nil
 }
 
 func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, s3Client *minio.Client) IBeanUsecase {

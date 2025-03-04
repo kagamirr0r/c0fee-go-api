@@ -20,9 +20,14 @@ func (br *beanRepository) GetBeanById(bean *model.Bean, id uint) error {
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
+		Preload("Country").
 		Preload("ProcessMethod").
-		Preload("Countries").
 		Preload("Varieties").
+		Preload("Area").
+		Preload("Farm").
+		Preload("Farmer").
+		Preload("BeanRatings").
+		Preload("BeanRatings.User").
 		Where("id = ?", id).
 		First(bean).Error; err != nil {
 		return err
@@ -35,9 +40,12 @@ func (br *beanRepository) GetBeansByUserId(userID uuid.UUID) ([]model.Bean, erro
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
+		Preload("Country").
 		Preload("ProcessMethod").
-		Preload("Countries").
 		Preload("Varieties").
+		Preload("Area").
+		Preload("Farm").
+		Preload("Farmer").
 		Where("user_id = ?", userID).
 		Find(&beans).Error; err != nil {
 		return []model.Bean{}, err
