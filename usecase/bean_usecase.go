@@ -75,7 +75,8 @@ func (bu *beanUsecase) ListByUser(user model.User) (model.BeansResponse, error) 
 		return model.BeansResponse{}, err
 	}
 
-	beans, err := bu.br.GetBeansByUserId(targetUser.ID)
+	beans := []model.Bean{}
+	err := bu.br.GetBeansByUserId(beans, targetUser.ID)
 	if err != nil {
 		return model.BeansResponse{}, err
 	}

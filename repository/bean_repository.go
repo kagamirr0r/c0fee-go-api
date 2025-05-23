@@ -9,7 +9,7 @@ import (
 
 type IBeanRepository interface {
 	GetBeanById(bean *model.Bean, id uint) error
-	GetBeansByUserId(userID uuid.UUID) ([]model.Bean, error)
+	GetBeansByUserId(beans []model.Bean, userID uuid.UUID) error
 }
 
 type beanRepository struct {
@@ -35,8 +35,7 @@ func (br *beanRepository) GetBeanById(bean *model.Bean, id uint) error {
 	return nil
 }
 
-func (br *beanRepository) GetBeansByUserId(userID uuid.UUID) ([]model.Bean, error) {
-	var beans []model.Bean
+func (br *beanRepository) GetBeansByUserId(beans []model.Bean, userID uuid.UUID) error {
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -48,9 +47,9 @@ func (br *beanRepository) GetBeansByUserId(userID uuid.UUID) ([]model.Bean, erro
 		Preload("Farmer").
 		Where("user_id = ?", userID).
 		Find(&beans).Error; err != nil {
-		return []model.Bean{}, err
+		return err
 	}
-	return beans, nil
+	return nil
 }
 
 func NewBeanRepository(db *gorm.DB) IBeanRepository {
