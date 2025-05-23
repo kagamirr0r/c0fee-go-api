@@ -38,15 +38,19 @@ func setupMiddleware(e *echo.Echo) {
 	e.Use(ValidateAuthorization)
 }
 
-func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController) {
+func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController) {
 	e.POST("/users", uc.Create)
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", bc.ListByUser)
 	e.GET("/beans/:id", bc.Read)
+	e.GET("/users/:id", uc.Read)
+	e.GET("/countries", cc.List)
+	e.GET("/roasters", rc.List)
+
 	// e.POST("/logout", uc.LogOut)
 }
 
-func NewRouter(uc controller.IUserController, bc controller.IBeanController) *echo.Echo {
+func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController) *echo.Echo {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()} //custom_validator.go
 
@@ -54,7 +58,7 @@ func NewRouter(uc controller.IUserController, bc controller.IBeanController) *ec
 	setupMiddleware(e)
 
 	// Define Routes
-	defineRoutes(e, uc, bc)
+	defineRoutes(e, uc, bc, cc, rc)
 
 	return e
 }

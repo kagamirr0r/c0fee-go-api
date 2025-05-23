@@ -15,3 +15,15 @@ type Country struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
+
+type CountryResponse struct {
+	ID    uint   `json:"id" param:"id"`
+	Name  string `json:"name"`
+	Code  string `json:"code"`
+	Areas []Area `json:"areas"`
+}
+
+type CountriesResponse struct {
+	Countries []CountryResponse `json:"countries"`
+	Count     uint              `json:"count"`
+}
