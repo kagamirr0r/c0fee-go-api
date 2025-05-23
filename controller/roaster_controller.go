@@ -1,0 +1,29 @@
+package controller
+
+import (
+	"c0fee-api/usecase"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
+
+type IRoasterController interface {
+	List(c echo.Context) error
+}
+
+type roasterController struct {
+	ru usecase.IRoasterUsecase
+}
+
+func (rc *roasterController) List(c echo.Context) error {
+	resCountries, err := rc.ru.List()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, resCountries)
+}
+
+func NewRoasterController(bu usecase.IRoasterUsecase) IRoasterController {
+	return &roasterController{bu}
+}

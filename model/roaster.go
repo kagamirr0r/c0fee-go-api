@@ -17,7 +17,14 @@ type Roaster struct {
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
 
-// type RoasterResponse struct {
-// 	ID   uuid.UUID `json:"id" gorm:"primary_key;type:uuid;"`
-// 	Name string    `json:"name" gorm:"unique" validate:"required"`
-// }
+type RoasterResponse struct {
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	WebURL  string `json:"web_url"`
+}
+
+type RoastersResponse struct {
+	Roasters []RoasterResponse `json:"roasters"`
+	Count    uint              `json:"count"`
+}
