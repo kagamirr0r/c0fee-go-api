@@ -24,6 +24,11 @@ type RoasterResponse struct {
 	WebURL  string `json:"web_url"`
 }
 
+type RoasterQueryParams struct {
+	Limit    int    `query:"limit"`
+	NameLike string `query:"name_like"`
+}
+
 type RoastersResponse struct {
 	Roasters []RoasterResponse `json:"roasters"`
 	Count    uint              `json:"count"`

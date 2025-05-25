@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"c0fee-api/model"
 	"c0fee-api/usecase"
 	"net/http"
 
@@ -16,7 +17,13 @@ type roasterController struct {
 }
 
 func (rc *roasterController) List(c echo.Context) error {
-	resCountries, err := rc.ru.List()
+	var params model.RoasterQueryParams
+
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	resCountries, err := rc.ru.List(params)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}

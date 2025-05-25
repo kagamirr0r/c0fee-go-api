@@ -6,18 +6,27 @@ import (
 )
 
 type IRoasterUsecase interface {
-	List() (model.RoastersResponse, error)
+	List(params model.RoasterQueryParams) (model.RoastersResponse, error)
 }
 
 type roasterUsecase struct {
-	cr repository.IRoasterRepository
+	rr repository.IRoasterRepository
 }
 
-func (cu *roasterUsecase) List() (model.RoastersResponse, error) {
+func (ru *roasterUsecase) List(params model.RoasterQueryParams) (model.RoastersResponse, error) {
 	roasters := []model.Roaster{}
-	err := cu.cr.List(&roasters)
-	if err != nil {
-		return model.RoastersResponse{}, err
+
+	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
+	if params.NameLike != "" || params.Limit > 0 {
+		err := ru.rr.Search(&roasters, params)
+		if err != nil {
+			return model.RoastersResponse{}, err
+		}
+	} else {
+		err := ru.rr.List(&roasters)
+		if err != nil {
+			return model.RoastersResponse{}, err
+		}
 	}
 
 	roastersResponse := make([]model.RoasterResponse, len(roasters))
