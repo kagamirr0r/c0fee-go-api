@@ -16,3 +16,15 @@ type Area struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
+
+type AreaListResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+func (a *Area) ToListResponse() AreaListResponse {
+	return AreaListResponse{
+		ID:   a.ID,
+		Name: a.Name,
+	}
+}

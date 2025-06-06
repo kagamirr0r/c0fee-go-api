@@ -43,8 +43,8 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
 	e.GET("/beans/:id", bc.Read)
-	e.GET("/users/:id", uc.Read)
 	e.GET("/countries", cc.List)
+	e.GET("/countries/:id", cc.Read)
 	e.GET("/roasters", rc.List)
 
 	// e.POST("/logout", uc.LogOut)
