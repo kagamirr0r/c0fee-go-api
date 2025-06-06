@@ -29,7 +29,7 @@ func (uu *userUsecase) Create(user model.User) (model.UserResponse, error) {
 
 func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 	storedUser := model.User{}
-	if err := uu.ur.GetUserById(&storedUser, user.ID); err != nil {
+	if err := uu.ur.GetById(&storedUser, user.ID); err != nil {
 		return model.UserResponse{}, err
 	}
 
@@ -47,7 +47,7 @@ func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 
 func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (model.UserBeansResponse, error) {
 	storedUser := model.User{}
-	if err := uu.ur.GetUserById(&storedUser, user.ID); err != nil {
+	if err := uu.ur.GetById(&storedUser, user.ID); err != nil {
 		return model.UserBeansResponse{}, err
 	}
 

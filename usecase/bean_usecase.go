@@ -18,7 +18,7 @@ type beanUsecase struct {
 
 func (bu *beanUsecase) Read(bean model.Bean) (model.BeanResponse, error) {
 	storedBean := model.Bean{}
-	if err := bu.br.GetBeanById(&storedBean, bean.ID); err != nil {
+	if err := bu.br.GetById(&storedBean, bean.ID); err != nil {
 		return model.BeanResponse{}, err
 	}
 

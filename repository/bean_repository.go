@@ -8,7 +8,7 @@ import (
 )
 
 type IBeanRepository interface {
-	GetBeanById(bean *model.Bean, id uint) error
+	GetById(bean *model.Bean, id uint) error
 	GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID) error
 }
 
@@ -16,7 +16,7 @@ type beanRepository struct {
 	db *gorm.DB
 }
 
-func (br *beanRepository) GetBeanById(bean *model.Bean, id uint) error {
+func (br *beanRepository) GetById(bean *model.Bean, id uint) error {
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
