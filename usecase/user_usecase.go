@@ -1,13 +1,9 @@
 package usecase
 
 import (
+	"c0fee-api/infrastructure/s3"
 	"c0fee-api/model"
 	"c0fee-api/repository"
-	"context"
-	"os"
-	"time"
-
-	"github.com/minio/minio-go/v7"
 )
 
 type IUserUsecase interface {
@@ -16,8 +12,8 @@ type IUserUsecase interface {
 }
 
 type userUsecase struct {
-	ur       repository.IUserRepository
-	s3Client *minio.Client
+	ur        repository.IUserRepository
+	s3Service s3.IS3Service
 }
 
 func (uu *userUsecase) Create(user model.User) (model.UserResponse, error) {
@@ -37,20 +33,16 @@ func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 	var avatarURL string
 	if storedUser.AvatarKey != "" {
 		// ユースケース層で presigned URL を生成
-		presignedURL, err := uu.s3Client.PresignedGetObject(context.Background(),
-			os.Getenv("S3_BUCKET"),
-			"users/"+storedUser.AvatarKey,
-			time.Hour*1,
-			nil)
+		presignedURL, err := uu.s3Service.GenerateUserAvatarURL(storedUser.AvatarKey)
 
 		if err != nil {
 			return model.UserResponse{}, err
 		}
-		avatarURL = presignedURL.String()
+		avatarURL = presignedURL
 	}
 	return model.UserResponse{ID: storedUser.ID, Name: storedUser.Name, AvatarURL: avatarURL}, nil
 }
 
-func NewUserUsecase(ur repository.IUserRepository, s3Client *minio.Client) IUserUsecase {
-	return &userUsecase{ur, s3Client}
+func NewUserUsecase(ur repository.IUserRepository, s3Service s3.IS3Service) IUserUsecase {
+	return &userUsecase{ur, s3Service}
 }

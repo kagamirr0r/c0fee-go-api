@@ -12,19 +12,19 @@ import (
 
 func main() {
 	db := db.NewDB()
-	s3Client, err := s3.NewS3Client()
+	s3Service, err := s3.NewS3Service()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// users
 	userRepository := repository.NewUserRepository(db)
-	userUseCase := usecase.NewUserUsecase(userRepository, s3Client)
+	userUseCase := usecase.NewUserUsecase(userRepository, s3Service)
 	userController := controller.NewUserController(userUseCase)
 
 	// beans
 	beanRepository := repository.NewBeanRepository(db)
-	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Client)
+	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Service)
 	beanController := controller.NewBeanController(beanUseCase)
 
 	// countries

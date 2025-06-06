@@ -2,13 +2,9 @@ package usecase
 
 import (
 	"c0fee-api/common"
+	"c0fee-api/infrastructure/s3"
 	"c0fee-api/model"
 	"c0fee-api/repository"
-	"context"
-	"os"
-	"time"
-
-	"github.com/minio/minio-go/v7"
 )
 
 type IBeanUsecase interface {
@@ -17,28 +13,9 @@ type IBeanUsecase interface {
 }
 
 type beanUsecase struct {
-	ur       repository.IUserRepository
-	br       repository.IBeanRepository
-	s3Client *minio.Client
-}
-
-func (bu *beanUsecase) generatePresignedURL(imageKey string) (string, error) {
-	if imageKey == "" || imageKey == "null" {
-		return "", nil
-	}
-
-	presignedURL, err := bu.s3Client.PresignedGetObject(
-		context.Background(),
-		os.Getenv("S3_BUCKET"),
-		"beans/"+imageKey,
-		time.Hour*1,
-		nil,
-	)
-
-	if err != nil {
-		return "", err
-	}
-	return presignedURL.String(), nil
+	ur        repository.IUserRepository
+	br        repository.IBeanRepository
+	s3Service s3.IS3Service
 }
 
 func (bu *beanUsecase) Read(bean model.Bean) (model.BeanResponse, error) {
@@ -47,7 +24,7 @@ func (bu *beanUsecase) Read(bean model.Bean) (model.BeanResponse, error) {
 		return model.BeanResponse{}, err
 	}
 
-	imageURL, err := bu.generatePresignedURL(*storedBean.ImageKey)
+	imageURL, err := bu.s3Service.GenerateBeanImageURL(*storedBean.ImageKey)
 	if err != nil {
 		return model.BeanResponse{}, err
 	}
@@ -83,7 +60,7 @@ func (bu *beanUsecase) ListByUser(user model.User) (model.BeansResponse, error) 
 
 	beanResponses := make([]model.BeanResponse, len(beans))
 	for i, bean := range beans {
-		imageURL, err := bu.generatePresignedURL(*bean.ImageKey)
+		imageURL, err := bu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
 		if err != nil {
 			return model.BeansResponse{}, err
 		}
@@ -106,6 +83,6 @@ func (bu *beanUsecase) ListByUser(user model.User) (model.BeansResponse, error) 
 	return model.BeansResponse{Beans: beanResponses, Count: uint(len(beans))}, nil
 }
 
-func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, s3Client *minio.Client) IBeanUsecase {
-	return &beanUsecase{ur, br, s3Client}
+func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, s3Service s3.IS3Service) IBeanUsecase {
+	return &beanUsecase{ur, br, s3Service}
 }
