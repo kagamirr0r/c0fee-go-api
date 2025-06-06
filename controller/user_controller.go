@@ -7,7 +7,6 @@ import (
 	"c0fee-api/usecase"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -15,6 +14,7 @@ import (
 type IUserController interface {
 	Create(c echo.Context) error
 	Read(c echo.Context) error
+	ListUserBeans(c echo.Context) error
 	// LogOut(c echo.Context) error
 }
 
@@ -49,15 +49,7 @@ func (uc *userController) Create(c echo.Context) error {
 		fieldErrors = []common.FieldError{{Field: "", Message: err.Error()}}
 		return c.JSON(http.StatusInternalServerError, common.GenerateErrorResponse("INTERNAL_SERVER_ERROR", "Something went wrong", fieldErrors))
 	}
-
-	response := common.Response{
-		Code:      "CREATED",
-		Message:   "User created",
-		Errors:    []common.FieldError{},
-		Content:   resUser,
-		Timestamp: time.Now().In(common.Jst).Format(time.RFC3339),
-	}
-	return c.JSON(http.StatusCreated, response)
+	return c.JSON(http.StatusCreated, resUser)
 }
 
 func (uc *userController) Read(c echo.Context) error {
@@ -72,6 +64,25 @@ func (uc *userController) Read(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resUser)
+}
+
+func (uc *userController) ListUserBeans(c echo.Context) error {
+	var params common.QueryParams
+	if err := c.Bind(&params); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	var user model.User
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	resBeans, err := uc.uu.GetUserBeans(user, params)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, resBeans)
 }
 
 // TODO: Delete User

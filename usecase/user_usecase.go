@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/infrastructure/s3"
 	"c0fee-api/model"
 	"c0fee-api/repository"
@@ -9,10 +10,12 @@ import (
 type IUserUsecase interface {
 	Create(user model.User) (model.UserResponse, error)
 	Read(user model.User) (model.UserResponse, error)
+	GetUserBeans(user model.User, params common.QueryParams) (model.UserBeansResponse, error)
 }
 
 type userUsecase struct {
 	ur        repository.IUserRepository
+	br        repository.IBeanRepository
 	s3Service s3.IS3Service
 }
 
@@ -32,7 +35,6 @@ func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 
 	var avatarURL string
 	if storedUser.AvatarKey != "" {
-		// ユースケース層で presigned URL を生成
 		presignedURL, err := uu.s3Service.GenerateUserAvatarURL(storedUser.AvatarKey)
 
 		if err != nil {
@@ -43,6 +45,44 @@ func (uu *userUsecase) Read(user model.User) (model.UserResponse, error) {
 	return model.UserResponse{ID: storedUser.ID, Name: storedUser.Name, AvatarURL: avatarURL}, nil
 }
 
-func NewUserUsecase(ur repository.IUserRepository, s3Service s3.IS3Service) IUserUsecase {
-	return &userUsecase{ur, s3Service}
+func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (model.UserBeansResponse, error) {
+	storedUser := model.User{}
+	if err := uu.ur.GetUserById(&storedUser, user.ID); err != nil {
+		return model.UserBeansResponse{}, err
+	}
+
+	beans := []model.Bean{}
+	err := uu.br.GetBeansByUserId(&beans, storedUser.ID)
+	if err != nil {
+		return model.UserBeansResponse{}, err
+	}
+
+	var avatarURL string
+	if storedUser.AvatarKey != "" {
+		presignedURL, err := uu.s3Service.GenerateUserAvatarURL(storedUser.AvatarKey)
+		if err != nil {
+			return model.UserBeansResponse{}, err
+		}
+		avatarURL = presignedURL
+	}
+
+	userResponse := storedUser.ToResponse(avatarURL)
+	beansResponse := make([]model.BeanResponse, len(beans))
+	for i, bean := range beans {
+		imageURL, err := uu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
+		if err != nil {
+			return model.UserBeansResponse{}, err
+		}
+		beansResponse[i] = bean.ToResponse(imageURL)
+	}
+
+	return model.UserBeansResponse{
+		User:  userResponse,
+		Beans: beansResponse,
+		Count: uint(len(beans)),
+	}, nil
+}
+
+func NewUserUsecase(ur repository.IUserRepository, bu repository.IBeanRepository, s3Service s3.IS3Service) IUserUsecase {
+	return &userUsecase{ur, bu, s3Service}
 }

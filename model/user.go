@@ -21,3 +21,17 @@ type UserResponse struct {
 	Name      string    `json:"name"`
 	AvatarURL string    `json:"avatar_url,omitempty"`
 }
+
+func (u *User) ToResponse(avatarURL string) UserResponse {
+	return UserResponse{
+		ID:        u.ID,
+		Name:      u.Name,
+		AvatarURL: avatarURL,
+	}
+}
+
+type UserBeansResponse struct {
+	User  UserResponse   `json:"user"`
+	Beans []BeanResponse `json:"beans"`
+	Count uint           `json:"count"`
+}

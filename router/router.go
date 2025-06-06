@@ -41,7 +41,7 @@ func setupMiddleware(e *echo.Echo) {
 func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController) {
 	e.POST("/users", uc.Create)
 	e.GET("/users/:id", uc.Read)
-	e.GET("/users/:id/beans", bc.ListByUser)
+	e.GET("/users/:id/beans", uc.ListUserBeans)
 	e.GET("/beans/:id", bc.Read)
 	e.GET("/users/:id", uc.Read)
 	e.GET("/countries", cc.List)

@@ -11,7 +11,6 @@ import (
 
 type IBeanController interface {
 	Read(c echo.Context) error
-	ListByUser(c echo.Context) error
 }
 
 type beanController struct {
@@ -34,20 +33,6 @@ func (bc *beanController) Read(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resBean)
-}
-
-func (bc *beanController) ListByUser(c echo.Context) error {
-	var user model.User
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	resBeans, err := bc.bu.ListByUser(user)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, resBeans)
 }
 
 func NewBeanController(bu usecase.IBeanUsecase) IBeanController {

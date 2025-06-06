@@ -11,31 +11,30 @@ import (
 )
 
 func main() {
+	// initialize infrastructure instances
 	db := db.NewDB()
 	s3Service, err := s3.NewS3Service()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// users
-	userRepository := repository.NewUserRepository(db)
-	userUseCase := usecase.NewUserUsecase(userRepository, s3Service)
-	userController := controller.NewUserController(userUseCase)
-
-	// beans
+	//repositories
 	beanRepository := repository.NewBeanRepository(db)
-	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Service)
-	beanController := controller.NewBeanController(beanUseCase)
-
-	// countries
 	countryRepository := repository.NewCountryRepository(db)
-	countryUsecase := usecase.NewCountryUsecase(countryRepository)
-	countryController := controller.NewCountryController(countryUsecase)
-
-	// roasters
 	roasterRepository := repository.NewRoasterRepository(db)
+	userRepository := repository.NewUserRepository(db)
+
+	// usecases
+	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Service)
+	countryUsecase := usecase.NewCountryUsecase(countryRepository)
 	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository)
+	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
+
+	// controllers
+	beanController := controller.NewBeanController(beanUseCase)
+	countryController := controller.NewCountryController(countryUsecase)
 	roasterController := controller.NewRoasterController(roasterUsecase)
+	userController := controller.NewUserController(userUseCase)
 
 	e := router.NewRouter(userController, beanController, countryController, roasterController)
 	e.Logger.Fatal(e.Start(":8080"))

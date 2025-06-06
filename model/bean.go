@@ -59,6 +59,24 @@ type BeanResponse struct {
 	ImageURL      *string        `json:"image_url,omitempty"`
 }
 
+func (b *Bean) ToResponse(imageURL string) BeanResponse {
+	return BeanResponse{
+		ID:            b.ID,
+		Name:          b.Name,
+		User:          b.User,
+		Roaster:       b.Roaster,
+		Country:       b.Country,
+		Area:          b.Area,
+		Farm:          b.Farm,
+		Farmer:        b.Farmer,
+		ProcessMethod: b.ProcessMethod,
+		Varieties:     b.Varieties,
+		RoastLevel:    b.RoastLevel,
+		BeanRatings:   b.BeanRatings,
+		ImageURL:      &imageURL,
+	}
+}
+
 type BeansResponse struct {
 	Beans []BeanResponse `json:"beans"`
 	Count uint           `json:"count"`
