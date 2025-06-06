@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
@@ -8,7 +9,7 @@ import (
 
 type IRoasterRepository interface {
 	List(countries *[]model.Roaster) error
-	Search(roasters *[]model.Roaster, params model.RoasterQueryParams) error
+	Search(roasters *[]model.Roaster, params common.QueryParams) error
 }
 
 type roasterRepository struct {
@@ -22,7 +23,7 @@ func (rr *roasterRepository) List(roasters *[]model.Roaster) error {
 	return nil
 }
 
-func (rr *roasterRepository) Search(roasters *[]model.Roaster, params model.RoasterQueryParams) error {
+func (rr *roasterRepository) Search(roasters *[]model.Roaster, params common.QueryParams) error {
 	// 基本のクエリを初期化
 	query := rr.db
 

@@ -1,19 +1,20 @@
 package usecase
 
 import (
+	"c0fee-api/common"
 	"c0fee-api/model"
 	"c0fee-api/repository"
 )
 
 type IRoasterUsecase interface {
-	List(params model.RoasterQueryParams) (model.RoastersResponse, error)
+	List(params common.QueryParams) (model.RoastersResponse, error)
 }
 
 type roasterUsecase struct {
 	rr repository.IRoasterRepository
 }
 
-func (ru *roasterUsecase) List(params model.RoasterQueryParams) (model.RoastersResponse, error) {
+func (ru *roasterUsecase) List(params common.QueryParams) (model.RoastersResponse, error) {
 	roasters := []model.Roaster{}
 
 	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得

@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"c0fee-api/model"
+	"c0fee-api/common"
 	"c0fee-api/usecase"
 	"net/http"
 
@@ -17,7 +17,7 @@ type roasterController struct {
 }
 
 func (rc *roasterController) List(c echo.Context) error {
-	var params model.RoasterQueryParams
+	var params common.QueryParams
 
 	if err := c.Bind(&params); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
