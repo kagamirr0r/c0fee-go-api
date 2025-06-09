@@ -19,23 +19,26 @@ func main() {
 	}
 
 	//repositories
+	areaRepository := repository.NewAreaRepository(db)
 	beanRepository := repository.NewBeanRepository(db)
 	countryRepository := repository.NewCountryRepository(db)
 	roasterRepository := repository.NewRoasterRepository(db)
 	userRepository := repository.NewUserRepository(db)
 
 	// usecases
+	areaUsecase := usecase.NewAreaUsecase(areaRepository)
 	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Service)
 	countryUsecase := usecase.NewCountryUsecase(countryRepository)
 	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository)
 	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
 
 	// controllers
+	areaController := controller.NewAreaController(areaUsecase)
 	beanController := controller.NewBeanController(beanUseCase)
 	countryController := controller.NewCountryController(countryUsecase)
 	roasterController := controller.NewRoasterController(roasterUsecase)
 	userController := controller.NewUserController(userUseCase)
 
-	e := router.NewRouter(userController, beanController, countryController, roasterController)
+	e := router.NewRouter(userController, beanController, countryController, roasterController, areaController)
 	e.Logger.Fatal(e.Start(":8080"))
 }

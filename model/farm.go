@@ -16,3 +16,15 @@ type Farm struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
+
+type FarmListResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+func (a *Farm) ToListResponse() FarmListResponse {
+	return FarmListResponse{
+		ID:   a.ID,
+		Name: a.Name,
+	}
+}
