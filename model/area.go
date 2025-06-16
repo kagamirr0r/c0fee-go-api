@@ -41,14 +41,14 @@ type AreaListResponse struct {
 	Name string `json:"name"`
 }
 
+type AreasResponse struct {
+	Areas []AreaListResponse `json:"areas"`
+	Count uint               `json:"count"`
+}
+
 func (a *Area) ToListResponse() AreaListResponse {
 	return AreaListResponse{
 		ID:   a.ID,
 		Name: a.Name,
 	}
-}
-
-type AreasResponse struct {
-	Areas []AreaListResponse `json:"areas"`
-	Count uint               `json:"count"`
 }

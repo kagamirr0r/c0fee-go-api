@@ -17,9 +17,33 @@ type Farm struct {
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
 
+type FarmResponse struct {
+	ID      uint                 `json:"id"`
+	Name    string               `json:"name"`
+	Farmers []FarmerListResponse `json:"farmers"`
+}
+
+func (f *Farm) ToResponse() FarmResponse {
+	farmers := make([]FarmerListResponse, len(f.Farmers))
+	for i, farmer := range f.Farmers {
+		farmers[i] = farmer.ToListResponse()
+	}
+
+	return FarmResponse{
+		ID:      f.ID,
+		Name:    f.Name,
+		Farmers: farmers,
+	}
+}
+
 type FarmListResponse struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
+}
+
+type FarmsResponse struct {
+	Areas []AreaListResponse `json:"areas"`
+	Count uint               `json:"count"`
 }
 
 func (a *Farm) ToListResponse() FarmListResponse {
