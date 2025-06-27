@@ -25,6 +25,7 @@ func main() {
 	farmRepository := repository.NewFarmRepository(db)
 	roasterRepository := repository.NewRoasterRepository(db)
 	userRepository := repository.NewUserRepository(db)
+	varietyRepository := repository.NewVarietyRepository(db)
 
 	// usecases
 	areaUsecase := usecase.NewAreaUsecase(areaRepository)
@@ -33,6 +34,7 @@ func main() {
 	farmUsecase := usecase.NewFarmUsecase(farmRepository)
 	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository)
 	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
+	varietyUsecase := usecase.NewVarietyUsecase(varietyRepository)
 
 	// controllers
 	areaController := controller.NewAreaController(areaUsecase)
@@ -41,7 +43,8 @@ func main() {
 	farmController := controller.NewFarmController(farmUsecase)
 	roasterController := controller.NewRoasterController(roasterUsecase)
 	userController := controller.NewUserController(userUseCase)
+	varietyController := controller.NewVarietyController(varietyUsecase)
 
-	e := router.NewRouter(userController, beanController, countryController, roasterController, areaController, farmController)
+	e := router.NewRouter(userController, beanController, countryController, roasterController, areaController, farmController, varietyController)
 	e.Logger.Fatal(e.Start(":8080"))
 }

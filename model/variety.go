@@ -14,14 +14,19 @@ type Variety struct {
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
 
-type VarietyResponse struct {
-	ID    uint   `json:"id" param:"id"`
-	Name  string `json:"name"`
-	Code  string `json:"code"`
-	Areas []Area `json:"areas"`
+type VarietyListResponse struct {
+	ID   uint   `json:"id" param:"id"`
+	Name string `json:"name"`
+}
+
+func (v *Variety) ToListResponse() VarietyListResponse {
+	return VarietyListResponse{
+		ID:   v.ID,
+		Name: v.Name,
+	}
 }
 
 type VarietiesResponse struct {
-	Countries []CountryResponse `json:"countries"`
-	Count     uint              `json:"count"`
+	Varieties []VarietyListResponse `json:"varieties"`
+	Count     uint                  `json:"count"`
 }
