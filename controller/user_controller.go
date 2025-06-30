@@ -3,9 +3,7 @@ package controller
 import (
 	"c0fee-api/common"
 	"c0fee-api/model"
-	"c0fee-api/repository"
 	"c0fee-api/usecase"
-	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -37,17 +35,20 @@ func (uc *userController) Create(c echo.Context) error {
 
 	resUser, err := uc.uu.Create(user)
 	if err != nil {
-		var fieldErrors []common.FieldError
-		if errors.Is(err, repository.ErrDuplicateId) {
-			fieldErrors = []common.FieldError{{Field: "id", Message: "ID already exists"}}
-			return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-		if errors.Is(err, repository.ErrDuplicateName) {
-			fieldErrors = []common.FieldError{{Field: "name", Message: "Name already exists"}}
-			return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
-		}
-		fieldErrors = []common.FieldError{{Field: "", Message: err.Error()}}
-		return c.JSON(http.StatusInternalServerError, common.GenerateErrorResponse("INTERNAL_SERVER_ERROR", "Something went wrong", fieldErrors))
+		// var fieldErrors []common.FieldError
+		// if errors.Is(err, repository.ErrDuplicateId) {
+		// 	fieldErrors = []common.FieldError{{Field: "id", Message: "ID already exists"}}
+		// 	return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
+		// }
+		// if errors.Is(err, repository.ErrDuplicateName) {
+		// 	fieldErrors = []common.FieldError{{Field: "name", Message: "Name already exists"}}
+		// 	return c.JSON(http.StatusConflict, common.GenerateErrorResponse("CONFLICT", "Validation failed", fieldErrors))
+		// }
+		// fieldErrors = []common.FieldError{{Field: "", Message: err.Error()}}
+		// return c.JSON(http.StatusInternalServerError, common.GenerateErrorResponse("INTERNAL_SERVER_ERROR", "Something went wrong", fieldErrors))
 	}
 	return c.JSON(http.StatusCreated, resUser)
 }
