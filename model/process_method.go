@@ -13,3 +13,20 @@ type ProcessMethod struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
+
+type ProcessMethodResponse struct {
+	ID     uint   `json:"id"`
+	Method string `json:"method"`
+}
+
+type ProcessMethodsResponse struct {
+	ProcessMethods []ProcessMethodResponse `json:"process_methods"`
+	Count          uint                    `json:"count"`
+}
+
+func (pm *ProcessMethod) ToResponse() ProcessMethodResponse {
+	return ProcessMethodResponse{
+		ID:     pm.ID,
+		Method: pm.Method,
+	}
+}

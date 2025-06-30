@@ -38,7 +38,7 @@ func setupMiddleware(e *echo.Echo) {
 	e.Use(ValidateAuthorization)
 }
 
-func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController) {
+func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController) {
 	e.POST("/users", uc.Create)
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
@@ -50,11 +50,12 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/areas/:id", ac.Read)
 	e.GET("/farms/:id", fc.Read)
 	e.GET("/varieties", vc.List)
+	e.GET("/process-methods", pmc.List)
 
 	// e.POST("/logout", uc.LogOut)
 }
 
-func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController) *echo.Echo {
+func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController) *echo.Echo {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()} //custom_validator.go
 
@@ -62,7 +63,7 @@ func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc 
 	setupMiddleware(e)
 
 	// Define Routes
-	defineRoutes(e, uc, bc, cc, rc, ac, fc, vc)
+	defineRoutes(e, uc, bc, cc, rc, ac, fc, vc, pmc)
 
 	return e
 }
