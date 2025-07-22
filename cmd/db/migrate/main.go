@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -37,8 +38,7 @@ func main() {
 	if len(os.Args) >= 2 {
 		args = append(args, os.Args[2:]...)
 	}
-
-	if err := goose.Run(os.Args[1], db, "infrastructure/db/migrations", args...); err != nil {
+	if err := goose.RunContext(context.Background(), os.Args[1], db, "infrastructure/db/migrations", args...); err != nil {
 		log.Fatalf("failed to run goose command: %v", err)
 	}
 }
