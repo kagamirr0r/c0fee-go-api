@@ -17,6 +17,32 @@ const (
 	Dark        RoastLevelType = "Dark"
 )
 
+var AllRoastLevels = []RoastLevelType{
+	Light,
+	MediumLight,
+	Medium,
+	MediumDark,
+	Dark,
+}
+
+type Currency string
+
+const (
+	JPY Currency = "JPY"
+	USD Currency = "USD"
+	EUR Currency = "EUR"
+	GBP Currency = "GBP"
+	KRW Currency = "KRW"
+)
+
+var AllCurrencies = []Currency{
+	JPY,
+	USD,
+	EUR,
+	GBP,
+	KRW,
+}
+
 type Bean struct {
 	ID              uint           `json:"id" param:"id" gorm:"primary_key;" validate:"required"`
 	UserID          uuid.UUID      `json:"user_id" gorm:"type:uuid;not null" validate:"required"`
@@ -36,6 +62,8 @@ type Bean struct {
 	ProcessMethod   *ProcessMethod `json:"process_method" gorm:"foreignKey:ProcessMethodID"`
 	Name            *string        `json:"name"`
 	RoastLevel      RoastLevelType `json:"roast_level" gorm:"not null;default:Medium" validate:"required"`
+	Price           *uint          `json:"price" gorm:"default:null"`
+	Currency        Currency       `json:"currency" gorm:"default:JPY"`
 	ImageKey        *string        `json:"image_key" gorm:"default:null"`
 	BeanRatings     []BeanRating   `json:"bean_ratings" gorm:"hasMany:BeanRatings;foreignKey:BeanID"`
 	CreatedAt       time.Time      `json:"created_at"`
@@ -55,11 +83,25 @@ type BeanResponse struct {
 	ProcessMethod *ProcessMethod `json:"process_method,omitempty"`
 	Varieties     []Variety      `json:"varieties,omitempty"`
 	RoastLevel    RoastLevelType `json:"roast_level"`
+	Price         *PriceResponse `json:"price,omitempty"`
 	BeanRatings   []BeanRating   `json:"bean_ratings"`
 	ImageURL      *string        `json:"image_url,omitempty"`
 }
 
+type PriceResponse struct {
+	Amount   float64  `json:"amount"`
+	Currency Currency `json:"currency"`
+}
+
 func (b *Bean) ToResponse(imageURL string) BeanResponse {
+	var price *PriceResponse
+	if b.Price != nil {
+		price = &PriceResponse{
+			Amount:   float64(*b.Price),
+			Currency: b.Currency,
+		}
+	}
+
 	return BeanResponse{
 		ID:            b.ID,
 		Name:          b.Name,
@@ -73,6 +115,7 @@ func (b *Bean) ToResponse(imageURL string) BeanResponse {
 		Varieties:     b.Varieties,
 		RoastLevel:    b.RoastLevel,
 		BeanRatings:   b.BeanRatings,
+		Price:         price,
 		ImageURL:      &imageURL,
 	}
 }
@@ -80,4 +123,27 @@ func (b *Bean) ToResponse(imageURL string) BeanResponse {
 type BeansResponse struct {
 	Beans []BeanResponse `json:"beans"`
 	Count uint           `json:"count"`
+}
+
+// roast level
+type RoastLevelResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type RoastLevelsResponse struct {
+	RoastLevels []RoastLevelResponse `json:"roast_levels"`
+	Count       uint                 `json:"count"`
+}
+
+func GetAllRoastLevels() []RoastLevelResponse {
+	roastLevels := make([]RoastLevelResponse, len(AllRoastLevels))
+
+	for i, level := range AllRoastLevels {
+		roastLevels[i] = RoastLevelResponse{
+			ID:   i + 1,
+			Name: string(level),
+		}
+	}
+	return roastLevels
 }

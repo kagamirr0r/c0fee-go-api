@@ -38,7 +38,7 @@ func setupMiddleware(e *echo.Echo) {
 	e.Use(ValidateAuthorization)
 }
 
-func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController) {
+func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.RoastLevelController) {
 	e.POST("/users", uc.Create)
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
@@ -51,11 +51,12 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/farms/:id", fc.Read)
 	e.GET("/varieties", vc.List)
 	e.GET("/process-methods", pmc.List)
+	e.GET("/roast-levels", rlc.GetAllRoastLevels)
 
 	// e.POST("/logout", uc.LogOut)
 }
 
-func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController) *echo.Echo {
+func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.RoastLevelController) *echo.Echo {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()} //custom_validator.go
 
@@ -63,7 +64,7 @@ func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc 
 	setupMiddleware(e)
 
 	// Define Routes
-	defineRoutes(e, uc, bc, cc, rc, ac, fc, vc, pmc)
+	defineRoutes(e, uc, bc, cc, rc, ac, fc, vc, pmc, rlc)
 
 	return e
 }

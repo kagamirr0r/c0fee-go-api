@@ -23,6 +23,7 @@ func main() {
 	beanRepository := repository.NewBeanRepository(db)
 	countryRepository := repository.NewCountryRepository(db)
 	farmRepository := repository.NewFarmRepository(db)
+	processMethodRepository := repository.NewProcessMethodRepository(db)
 	roasterRepository := repository.NewRoasterRepository(db)
 	userRepository := repository.NewUserRepository(db)
 	varietyRepository := repository.NewVarietyRepository(db)
@@ -32,7 +33,9 @@ func main() {
 	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, s3Service)
 	countryUsecase := usecase.NewCountryUsecase(countryRepository)
 	farmUsecase := usecase.NewFarmUsecase(farmRepository)
+	processMethodUsecase := usecase.NewProcessMethodUsecase(processMethodRepository)
 	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository)
+	roastLevelUsecase := usecase.NewRoastLevelUsecase()
 	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
 	varietyUsecase := usecase.NewVarietyUsecase(varietyRepository)
 
@@ -41,10 +44,12 @@ func main() {
 	beanController := controller.NewBeanController(beanUseCase)
 	countryController := controller.NewCountryController(countryUsecase)
 	farmController := controller.NewFarmController(farmUsecase)
+	processMethodController := controller.NewProcessMethodController(processMethodUsecase)
 	roasterController := controller.NewRoasterController(roasterUsecase)
+	roastLevelController := controller.NewRoastLevelController(roastLevelUsecase)
 	userController := controller.NewUserController(userUseCase)
 	varietyController := controller.NewVarietyController(varietyUsecase)
 
-	e := router.NewRouter(userController, beanController, countryController, roasterController, areaController, farmController, varietyController)
+	e := router.NewRouter(userController, beanController, countryController, roasterController, areaController, farmController, varietyController, processMethodController, roastLevelController)
 	e.Logger.Fatal(e.Start(":8080"))
 }
