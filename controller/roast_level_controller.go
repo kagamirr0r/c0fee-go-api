@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"c0fee-api/model"
+	"c0fee-api/dto"
 	"c0fee-api/usecase"
 )
 
@@ -20,7 +20,7 @@ type roastLevelController struct {
 func (rlc *roastLevelController) GetAllRoastLevels(c echo.Context) error {
 	roastLevels := rlc.rlu.GetAllRoastLevels()
 
-	res := model.RoastLevelsResponse{
+	res := dto.RoastLevelsResponse{
 		RoastLevels: roastLevels,
 		Count:       uint(len(roastLevels)),
 	}
