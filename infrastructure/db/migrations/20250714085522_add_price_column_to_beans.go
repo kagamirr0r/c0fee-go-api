@@ -26,12 +26,12 @@ func upAddPriceColumnToBeans(ctx context.Context, tx *sql.Tx) error {
 	}
 
 	// Add price column to beans table
-	if err := db.Exec("ALTER TABLE beans ADD COLUMN price NUMERIC(10,2) AFTER roast_level"); err != nil {
+	if err := db.Migrator().AddColumn(&model.Bean{}, "price"); err != nil {
 		return fmt.Errorf("failed to add price column to beans: %w", err)
 	}
 
 	// Add currency column to beans table
-	if err := db.Exec("ALTER TABLE beans ADD COLUMN currency VARCHAR(3) AFTER price"); err != nil {
+	if err := db.Migrator().AddColumn(&model.Bean{}, "currency"); err != nil {
 		return fmt.Errorf("failed to add currency column to beans: %w", err)
 	}
 	fmt.Println("Successfully added price and currency column to beans")

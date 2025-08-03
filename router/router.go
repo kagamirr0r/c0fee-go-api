@@ -3,6 +3,7 @@ package router
 import (
 	"c0fee-api/controller"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"
@@ -10,15 +11,28 @@ import (
 )
 
 func setupMiddleware(e *echo.Echo) {
-	// Add body dump middleware for debugging
+	// Add body dump middleware for debugging (only for non-multipart requests)
 	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-		headers := c.Request().Header
-		for name, values := range headers {
+		contentType := c.Request().Header.Get("Content-Type")
+
+		// ヘッダー情報を表示
+		fmt.Printf("=== REQUEST HEADERS ===\n")
+		for name, values := range c.Request().Header {
 			for _, value := range values {
 				fmt.Printf("Header: %s: %s\n", name, value)
 			}
 		}
-		fmt.Printf("Request Body: %s\nResponse Body: %s\n", string(reqBody), string(resBody))
+
+		// multipart/form-dataの場合は詳細なボディ出力をスキップ
+		if contentType != "" && (contentType == "application/json" || !strings.Contains(contentType, "multipart/form-data")) {
+			fmt.Printf("Request Body: %s\n", string(reqBody))
+		} else {
+			fmt.Printf("Request Body: [multipart/form-data - binary content skipped]\n")
+			fmt.Printf("Content-Type: %s\n", contentType)
+		}
+
+		fmt.Printf("Response Body: %s\n", string(resBody))
+		fmt.Printf("=====================\n")
 	}))
 
 	// Add request logger middleware
@@ -43,6 +57,7 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
 	e.GET("/beans/:id", bc.Read)
+	e.POST("/beans", bc.Create) // Bean作成エンドポイントを追加
 	e.GET("/countries", cc.List)
 	e.GET("/countries/:id", cc.Read)
 	e.GET("/countries/:id", cc.Read)

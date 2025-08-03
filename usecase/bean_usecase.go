@@ -1,22 +1,33 @@
 package usecase
 
 import (
+	"c0fee-api/common/converter"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
 	"c0fee-api/model"
 	"c0fee-api/repository"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"time"
+	"mime/multipart"
+	"path/filepath"
+	"strings"
+
+	"github.com/go-playground/validator"
+	"github.com/google/uuid"
 )
 
 type IBeanUsecase interface {
-	Read(bean model.Bean) (dto.BeanResponse, error)
+	Read(bean model.Bean) (dto.BeanOutput, error)
+	Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
 }
 
 type beanUsecase struct {
 	ur        repository.IUserRepository
 	br        repository.IBeanRepository
+	brr       repository.IBeanRatingRepository
 	s3Service s3.IS3Service
+	validator *validator.Validate
 }
 
 func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
@@ -37,118 +48,122 @@ func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
 	return converter.ConvertToBeanResponse(&storedBean, imageURL), nil
 }
 
-func (bu *beanUsecase) convertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanResponse {
-	response := dto.BeanResponse{
-		ID:         bean.ID,
-		Name:       bean.Name,
-		RoastLevel: string(bean.RoastLevel),
-		CreatedAt:  bean.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  bean.UpdatedAt.Format(time.RFC3339),
+func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
+	// ユーザーの存在確認
+	var user model.User
+	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("user not found: %w", err)
 	}
 
-	if imageURL != "" {
-		response.ImageURL = &imageURL
+	// JSONデータをパース
+	var data dto.CreateBeanData
+	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("invalid JSON data: %w", err)
+	}
+	// validatorを使用してJsonデータをバリデーション
+	if err := bu.validator.Struct(data); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// User
-	response.User = dto.UserSummary{
-		ID:   bean.User.ID.String(),
-		Name: bean.User.Name,
-	}
-
-	// Roaster
-	response.Roaster = dto.RoasterSummary{
-		ID:   bean.Roaster.ID,
-		Name: bean.Roaster.Name,
-	}
-
-	// Country
-	response.Country = dto.CountrySummary{
-		ID:   bean.Country.ID,
-		Name: bean.Country.Name,
-	}
-
-	// Optional fields
-	if bean.Area != nil {
-		response.Area = &dto.AreaSummary{
-			ID:   bean.Area.ID,
-			Name: bean.Area.Name,
+	// 画像ファイルのバリデーション（ファイルがある場合のみ）
+	if imageFile != nil {
+		if err := bu.validateImageFile(imageFile); err != nil {
+			return dto.BeanOutput{}, err
 		}
 	}
 
-	if bean.Farm != nil {
-		response.Farm = &dto.FarmSummary{
-			ID:   bean.Farm.ID,
-			Name: bean.Farm.Name,
+	// Beanエンティティを作成
+	bean := converter.ConvertCreateBeanDataToBean(userID, data)
+	// 最初にBeanを保存（画像なしで）
+	if err := bu.br.Create(&bean); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("failed to create bean: %w", err)
+	}
+
+	// 画像をS3にアップロード（画像ファイルがある場合のみ）
+	if imageFile != nil {
+		imageKey, err := bu.s3Service.UploadBeanImage(bean.ID, imageFile)
+		if err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
+		}
+		bean.ImageKey = &imageKey
+
+		// 画像キーを更新
+		if err := bu.br.Update(&bean); err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to update bean with image key: %w", err)
 		}
 	}
 
-	if bean.Farmer != nil {
-		response.Farmer = &dto.FarmerSummary{
-			ID:   bean.Farmer.ID,
-			Name: bean.Farmer.Name,
+	// 作成されたBeanを取得（関連データ含む）
+	var createdBean model.Bean
+	if err := bu.br.GetById(&createdBean, bean.ID); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("failed to get created bean: %w", err)
+	}
+
+	// BeanRatingがある場合は作成
+	if data.BeanRating != nil {
+		beanRating := model.BeanRating{
+			BeanID:     bean.ID,
+			UserID:     uuid.MustParse(userID),
+			Bitterness: data.BeanRating.Bitterness,
+			Acidity:    data.BeanRating.Acidity,
+			Body:       data.BeanRating.Body,
+		}
+
+		if data.BeanRating.FlavorNote != nil {
+			beanRating.FlavorNote = *data.BeanRating.FlavorNote
+		}
+
+		if err := bu.brr.Create(&beanRating); err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to create bean rating: %w", err)
+		}
+
+		// BeanRatingを含めて再取得
+		if err := bu.br.GetById(&createdBean, bean.ID); err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to get created bean with rating: %w", err)
 		}
 	}
 
-	if bean.ProcessMethod != nil {
-		response.ProcessMethod = &dto.ProcessMethodSummary{
-			ID:   bean.ProcessMethod.ID,
-			Name: bean.ProcessMethod.Name,
-		}
+	// 画像URLを生成
+	var imageURL string
+	if createdBean.ImageKey != nil {
+		imageURL, _ = bu.s3Service.GenerateBeanImageURL(*createdBean.ImageKey)
 	}
 
-	// Varieties
-	varieties := make([]dto.VarietySummary, len(bean.Varieties))
-	for i, variety := range bean.Varieties {
-		varieties[i] = dto.VarietySummary{
-			ID:   variety.ID,
-			Name: variety.Name,
-		}
-	}
-	response.Varieties = varieties
-
-	// Price
-	if bean.Price != nil {
-		response.Price = &dto.PriceResponse{
-			Amount:         float64(*bean.Price),
-			Currency:       string(bean.Currency),
-			FormattedPrice: bu.formatPrice(*bean.Price, bean.Currency),
-		}
-	}
-
-	// BeanRatings
-	ratings := make([]dto.BeanRatingSummary, len(bean.BeanRatings))
-	for i, rating := range bean.BeanRatings {
-		ratings[i] = dto.BeanRatingSummary{
-			ID:         rating.ID,
-			Bitterness: rating.Bitterness,
-			Acidity:    rating.Acidity,
-			Body:       rating.Body,
-			FlavorNote: &rating.FlavorNote,
-		}
-	}
-	response.BeanRatings = ratings
-
-	return response
+	return converter.ConvertToBeanResponse(&createdBean, imageURL), nil
 }
 
-func (bu *beanUsecase) formatPrice(price uint, currency model.Currency) string {
-	switch currency {
-	case model.JPY:
-		return fmt.Sprintf("¥%d", price)
-	case model.USD:
-		return fmt.Sprintf("$%.2f", float64(price)/100)
-	case model.EUR:
-		return fmt.Sprintf("€%.2f", float64(price)/100)
-	case model.GBP:
-		return fmt.Sprintf("£%.2f", float64(price)/100)
-	case model.KRW:
-		return fmt.Sprintf("₩%d", price)
-	default:
-		return fmt.Sprintf("%.2f %s", float64(price), currency)
+func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error {
+	// ファイルサイズチェック（例：5MB制限）
+	maxSize := int64(5 * 1024 * 1024) // 5MB
+	if imageFile.Size > maxSize {
+		return errors.New("image file size must be less than 5MB")
 	}
+
+	// ファイル拡張子チェック
+	ext := strings.ToLower(filepath.Ext(imageFile.Filename))
+	allowedExts := []string{".jpg", ".jpeg", ".png", ".webp"}
+
+	valid := false
+	for _, allowedExt := range allowedExts {
+		if ext == allowedExt {
+			valid = true
+			break
+		}
+	}
+
+	if !valid {
+		return errors.New("image file must be jpg, jpeg, png, or webp")
+	}
+
+	return nil
 }
 
-func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, s3Service s3.IS3Service) IBeanUsecase {
-	return &beanUsecase{ur, br, s3Service}
+func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, brr repository.IBeanRatingRepository, s3Service s3.IS3Service, v *validator.Validate) IBeanUsecase {
+	return &beanUsecase{
+		ur:        ur,
+		br:        br,
+		brr:       brr,
+		s3Service: s3Service,
+		validator: v,
+	}
 }
