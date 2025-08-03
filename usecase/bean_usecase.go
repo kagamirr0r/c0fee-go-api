@@ -34,7 +34,7 @@ func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
 		imageURL = url
 	}
 
-	return bu.convertToBeanResponse(&storedBean, imageURL), nil
+	return converter.ConvertToBeanResponse(&storedBean, imageURL), nil
 }
 
 func (bu *beanUsecase) convertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanResponse {
