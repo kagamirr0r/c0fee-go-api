@@ -8,32 +8,32 @@ import (
 )
 
 type IRoasterUsecase interface {
-	List(params common.QueryParams) (dto.RoastersResponse, error)
+	List(params common.QueryParams) (dto.RoastersOutput, error)
 }
 
 type roasterUsecase struct {
 	rr repository.IRoasterRepository
 }
 
-func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersResponse, error) {
+func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, error) {
 	roasters := []model.Roaster{}
 
 	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
 	if params.NameLike != "" || params.Limit > 0 {
 		err := ru.rr.Search(&roasters, params)
 		if err != nil {
-			return dto.RoastersResponse{}, err
+			return dto.RoastersOutput{}, err
 		}
 	} else {
 		err := ru.rr.List(&roasters)
 		if err != nil {
-			return dto.RoastersResponse{}, err
+			return dto.RoastersOutput{}, err
 		}
 	}
 
-	roastersResponse := make([]dto.RoasterResponse, len(roasters))
+	roastersResponse := make([]dto.RoasterOutput, len(roasters))
 	for i, roaster := range roasters {
-		roastersResponse[i] = dto.RoasterResponse{
+		roastersResponse[i] = dto.RoasterOutput{
 			ID:      roaster.ID,
 			Name:    roaster.Name,
 			Address: roaster.Address,
@@ -41,7 +41,7 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersResponse,
 		}
 	}
 
-	return dto.RoastersResponse{Roasters: roastersResponse, Count: uint(len(roasters))}, nil
+	return dto.RoastersOutput{Roasters: roastersResponse, Count: uint(len(roasters))}, nil
 }
 
 func NewRoasterUsecase(cr repository.IRoasterRepository) IRoasterUsecase {

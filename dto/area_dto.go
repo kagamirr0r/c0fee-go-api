@@ -1,18 +1,18 @@
 package dto
 
-// Response DTOs
-type AreaResponse struct {
-	ID    uint               `json:"id"`
-	Name  string             `json:"name"`
-	Farms []FarmListResponse `json:"farms"`
+// Output DTOs
+type AreaOutput struct {
+	ID    uint             `json:"id"`
+	Name  string           `json:"name"`
+	Farms []FarmListOutput `json:"farms"`
 }
 
-type AreaListResponse struct {
+type AreaListOutput struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
-type AreasResponse struct {
-	Areas []AreaListResponse `json:"areas"`
-	Count uint               `json:"count"`
+type AreasOutput struct {
+	Areas []AreaListOutput `json:"areas"`
+	Count uint             `json:"count"`
 }

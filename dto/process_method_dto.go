@@ -1,12 +1,12 @@
 package dto
 
-// Response DTOs
-type ProcessMethodResponse struct {
+// Output DTOs
+type ProcessMethodOutput struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
-type ProcessMethodsResponse struct {
-	ProcessMethods []ProcessMethodResponse `json:"process_methods"`
-	Count          uint                    `json:"count"`
+type ProcessMethodsOutput struct {
+	ProcessMethods []ProcessMethodOutput `json:"process_methods"`
+	Count          uint                  `json:"count"`
 }

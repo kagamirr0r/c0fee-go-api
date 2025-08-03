@@ -1,20 +1,20 @@
 package dto
 
-// Response DTOs
-type CountryResponse struct {
-	ID    uint               `json:"id"`
-	Name  string             `json:"name"`
-	Code  string             `json:"code"`
-	Areas []AreaListResponse `json:"areas"`
+// Output DTOs
+type CountryOutput struct {
+	ID    uint             `json:"id"`
+	Name  string           `json:"name"`
+	Code  string           `json:"code"`
+	Areas []AreaListOutput `json:"areas"`
 }
 
-type CountryListResponse struct {
+type CountryListOutput struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 	Code string `json:"code"`
 }
 
-type CountriesResponse struct {
-	Countries []CountryListResponse `json:"countries"`
-	Count     uint                  `json:"count"`
+type CountriesOutput struct {
+	Countries []CountryListOutput `json:"countries"`
+	Count     uint                `json:"count"`
 }

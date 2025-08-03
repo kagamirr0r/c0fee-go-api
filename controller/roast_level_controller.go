@@ -20,7 +20,7 @@ type roastLevelController struct {
 func (rlc *roastLevelController) GetAllRoastLevels(c echo.Context) error {
 	roastLevels := rlc.rlu.GetAllRoastLevels()
 
-	res := dto.RoastLevelsResponse{
+	res := dto.RoastLevelsOutput{
 		RoastLevels: roastLevels,
 		Count:       uint(len(roastLevels)),
 	}

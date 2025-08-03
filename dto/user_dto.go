@@ -1,14 +1,14 @@
 package dto
 
-// Response DTOs
-type UserResponse struct {
+// Output DTOs
+type UserOutput struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	AvatarURL string `json:"avatar_url,omitempty"`
 }
 
-type UserBeansResponse struct {
-	User  UserResponse   `json:"user"`
-	Beans []BeanResponse `json:"beans"`
-	Count uint           `json:"count"`
+type UserBeansOutput struct {
+	User  UserOutput   `json:"user"`
+	Beans []BeanOutput `json:"beans"`
+	Count uint         `json:"count"`
 }

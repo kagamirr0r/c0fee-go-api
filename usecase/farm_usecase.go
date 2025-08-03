@@ -7,32 +7,32 @@ import (
 )
 
 type IFarmUsecase interface {
-	Read(id uint) (dto.FarmResponse, error)
+	Read(id uint) (dto.FarmOutput, error)
 }
 
 type farmUsecase struct {
 	ar repository.IFarmRepository
 }
 
-func (au *farmUsecase) Read(id uint) (dto.FarmResponse, error) {
+func (au *farmUsecase) Read(id uint) (dto.FarmOutput, error) {
 	storedFarm := model.Farm{}
 	if err := au.ar.GetById(&storedFarm, id); err != nil {
-		return dto.FarmResponse{}, err
+		return dto.FarmOutput{}, err
 	}
 
 	return au.convertToFarmResponse(&storedFarm), nil
 }
 
-func (au *farmUsecase) convertToFarmResponse(farm *model.Farm) dto.FarmResponse {
-	farmers := make([]dto.FarmerListResponse, len(farm.Farmers))
+func (au *farmUsecase) convertToFarmResponse(farm *model.Farm) dto.FarmOutput {
+	farmers := make([]dto.FarmerListOutput, len(farm.Farmers))
 	for i, farmer := range farm.Farmers {
-		farmers[i] = dto.FarmerListResponse{
+		farmers[i] = dto.FarmerListOutput{
 			ID:   farmer.ID,
 			Name: farmer.Name,
 		}
 	}
 
-	return dto.FarmResponse{
+	return dto.FarmOutput{
 		ID:      farm.ID,
 		Name:    farm.Name,
 		Farmers: farmers,

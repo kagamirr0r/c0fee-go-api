@@ -1,7 +1,7 @@
 package dto
 
-// Response DTOs
-type FarmerListResponse struct {
+// Output DTOs
+type FarmerListOutput struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }

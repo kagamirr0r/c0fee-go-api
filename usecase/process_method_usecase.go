@@ -7,29 +7,29 @@ import (
 )
 
 type IProcessMethodUsecase interface {
-	List() (dto.ProcessMethodsResponse, error)
+	List() (dto.ProcessMethodsOutput, error)
 }
 
 type processMethodUsecase struct {
 	pmr repository.IProcessMethodRepository
 }
 
-func (pmu *processMethodUsecase) List() (dto.ProcessMethodsResponse, error) {
+func (pmu *processMethodUsecase) List() (dto.ProcessMethodsOutput, error) {
 	processMethods := []model.ProcessMethod{}
 	err := pmu.pmr.List(&processMethods)
 	if err != nil {
-		return dto.ProcessMethodsResponse{}, err
+		return dto.ProcessMethodsOutput{}, err
 	}
 
-	processMethodResponses := make([]dto.ProcessMethodResponse, len(processMethods))
+	processMethodResponses := make([]dto.ProcessMethodOutput, len(processMethods))
 	for i, processMethod := range processMethods {
-		processMethodResponses[i] = dto.ProcessMethodResponse{
+		processMethodResponses[i] = dto.ProcessMethodOutput{
 			ID:   processMethod.ID,
 			Name: processMethod.Name,
 		}
 	}
 
-	return dto.ProcessMethodsResponse{ProcessMethods: processMethodResponses, Count: uint(len(processMethods))}, nil
+	return dto.ProcessMethodsOutput{ProcessMethods: processMethodResponses, Count: uint(len(processMethods))}, nil
 }
 
 func NewProcessMethodUsecase(pmr repository.IProcessMethodRepository) IProcessMethodUsecase {

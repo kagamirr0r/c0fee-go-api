@@ -7,29 +7,29 @@ import (
 )
 
 type IVarietyUsecase interface {
-	List() (dto.VarietiesResponse, error)
+	List() (dto.VarietiesOutput, error)
 }
 
 type varietyUsecase struct {
 	vr repository.IVarietyRepository
 }
 
-func (vu *varietyUsecase) List() (dto.VarietiesResponse, error) {
+func (vu *varietyUsecase) List() (dto.VarietiesOutput, error) {
 	varieties := []model.Variety{}
 	err := vu.vr.List(&varieties)
 	if err != nil {
-		return dto.VarietiesResponse{}, err
+		return dto.VarietiesOutput{}, err
 	}
 
-	varietyResponses := make([]dto.VarietyListResponse, len(varieties))
+	varietyResponses := make([]dto.VarietyListOutput, len(varieties))
 	for i, variety := range varieties {
-		varietyResponses[i] = dto.VarietyListResponse{
+		varietyResponses[i] = dto.VarietyListOutput{
 			ID:   variety.ID,
 			Name: variety.Name,
 		}
 	}
 
-	return dto.VarietiesResponse{Varieties: varietyResponses, Count: uint(len(varieties))}, nil
+	return dto.VarietiesOutput{Varieties: varietyResponses, Count: uint(len(varieties))}, nil
 }
 
 func NewVarietyUsecase(vr repository.IVarietyRepository) IVarietyUsecase {

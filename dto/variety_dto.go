@@ -1,12 +1,12 @@
 package dto
 
-// Response DTOs
-type VarietyListResponse struct {
+// Output DTOs
+type VarietyListOutput struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
-type VarietiesResponse struct {
-	Varieties []VarietyListResponse `json:"varieties"`
-	Count     uint                  `json:"count"`
+type VarietiesOutput struct {
+	Varieties []VarietyListOutput `json:"varieties"`
+	Count     uint                `json:"count"`
 }

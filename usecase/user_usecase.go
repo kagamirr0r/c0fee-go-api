@@ -11,9 +11,9 @@ import (
 )
 
 type IUserUsecase interface {
-	Create(user model.User) (dto.UserResponse, error)
-	Read(user model.User) (dto.UserResponse, error)
-	GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansResponse, error)
+	Create(user model.User) (dto.UserOutput, error)
+	Read(user model.User) (dto.UserOutput, error)
+	GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansOutput, error)
 }
 
 type userUsecase struct {
@@ -22,72 +22,71 @@ type userUsecase struct {
 	s3Service s3.IS3Service
 }
 
-func (uu *userUsecase) Create(user model.User) (dto.UserResponse, error) {
+func (uu *userUsecase) Create(user model.User) (dto.UserOutput, error) {
 	newUser := model.User{ID: user.ID, Name: user.Name}
 	if err := uu.ur.CreateUser(&newUser); err != nil {
-		return dto.UserResponse{}, err
+		return dto.UserOutput{}, err
 	}
-	return dto.UserResponse{ID: newUser.ID.String(), Name: newUser.Name}, nil
+	return dto.UserOutput{ID: newUser.ID.String(), Name: newUser.Name}, nil
 }
 
-func (uu *userUsecase) Read(user model.User) (dto.UserResponse, error) {
+func (uu *userUsecase) Read(user model.User) (dto.UserOutput, error) {
 	storedUser := model.User{}
 	if err := uu.ur.GetById(&storedUser, user.ID); err != nil {
-		return dto.UserResponse{}, err
+		return dto.UserOutput{}, err
 	}
 
 	var avatarURL string
 	if storedUser.AvatarKey != "" {
 		presignedURL, err := uu.s3Service.GenerateUserAvatarURL(storedUser.AvatarKey)
 		if err != nil {
-			return dto.UserResponse{}, err
+			return dto.UserOutput{}, err
 		}
 		avatarURL = presignedURL
 	}
-	return dto.UserResponse{ID: storedUser.ID.String(), Name: storedUser.Name, AvatarURL: avatarURL}, nil
+	return dto.UserOutput{ID: storedUser.ID.String(), Name: storedUser.Name, AvatarURL: avatarURL}, nil
 }
 
-func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansResponse, error) {
+func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansOutput, error) {
 	storedUser := model.User{}
 	if err := uu.ur.GetById(&storedUser, user.ID); err != nil {
-		return dto.UserBeansResponse{}, err
+		return dto.UserBeansOutput{}, err
 	}
 
 	beans := []model.Bean{}
-	err := uu.br.GetBeansByUserId(&beans, storedUser.ID)
-	if err != nil {
-		return dto.UserBeansResponse{}, err
-	}
 
-	var avatarURL string
-	if storedUser.AvatarKey != "" {
-		presignedURL, err := uu.s3Service.GenerateUserAvatarURL(storedUser.AvatarKey)
+	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
+	if params.NameLike != "" || params.Limit > 0 {
+		err := uu.br.SearchBeansByUserId(&beans, storedUser.ID, params)
 		if err != nil {
-			return dto.UserBeansResponse{}, err
+			return dto.UserBeansOutput{}, err
 		}
-		avatarURL = presignedURL
+	} else {
+		err := uu.br.GetBeansByUserId(&beans, storedUser.ID)
+		if err != nil {
+			return dto.UserBeansOutput{}, err
+		}
 	}
 
-	userResponse := dto.UserResponse{
-		ID:        storedUser.ID.String(),
-		Name:      storedUser.Name,
-		AvatarURL: avatarURL,
+	userResponse := dto.UserOutput{
+		ID:   storedUser.ID.String(),
+		Name: storedUser.Name,
 	}
 
-	beansResponse := make([]dto.BeanResponse, len(beans))
+	beansResponse := make([]dto.BeanOutput, len(beans))
 	for i, bean := range beans {
 		var imageURL string
 		if bean.ImageKey != nil {
 			url, err := uu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
 			if err != nil {
-				return dto.UserBeansResponse{}, err
+				return dto.UserBeansOutput{}, err
 			}
 			imageURL = url
 		}
 		beansResponse[i] = uu.convertToBeanResponse(&bean, imageURL)
 	}
 
-	return dto.UserBeansResponse{
+	return dto.UserBeansOutput{
 		User:  userResponse,
 		Beans: beansResponse,
 		Count: uint(len(beans)),

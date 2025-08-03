@@ -19,17 +19,17 @@ type beanUsecase struct {
 	s3Service s3.IS3Service
 }
 
-func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanResponse, error) {
+func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
 	storedBean := model.Bean{}
 	if err := bu.br.GetById(&storedBean, bean.ID); err != nil {
-		return dto.BeanResponse{}, err
+		return dto.BeanOutput{}, err
 	}
 
 	var imageURL string
 	if storedBean.ImageKey != nil {
 		url, err := bu.s3Service.GenerateBeanImageURL(*storedBean.ImageKey)
 		if err != nil {
-			return dto.BeanResponse{}, err
+			return dto.BeanOutput{}, err
 		}
 		imageURL = url
 	}
