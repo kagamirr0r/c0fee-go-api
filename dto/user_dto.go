@@ -8,7 +8,8 @@ type UserOutput struct {
 }
 
 type UserBeansOutput struct {
-	User  UserOutput   `json:"user"`
-	Beans []BeanOutput `json:"beans"`
-	Count uint         `json:"count"`
+	User       UserOutput   `json:"user"`
+	Beans      []BeanOutput `json:"beans"`
+	Count      uint         `json:"count"`
+	NextCursor *uint        `json:"next_cursor,omitempty"`
 }

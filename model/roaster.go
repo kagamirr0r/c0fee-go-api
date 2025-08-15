@@ -7,11 +7,12 @@ import (
 )
 
 type Roaster struct {
-	ID        uint   `param:"id" gorm:"primary_key;" validate:"required"`
-	Name      string `gorm:"unique" validate:"required"`
-	Address   string `validate:"required"`
-	WebURL    string `validate:"required"`
-	Beans     []Bean `gorm:"hasMany:Beans;foreignKey:RoasterID"`
+	ID        uint    `param:"id" gorm:"primary_key;" validate:"required"`
+	Name      string  `gorm:"unique" validate:"required"`
+	Address   string  `validate:"required"`
+	WebURL    string  `validate:"required"`
+	Beans     []Bean  `gorm:"hasMany:Beans;foreignKey:RoasterID"`
+	ImageKey  *string `gorm:"default:null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

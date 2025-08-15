@@ -24,10 +24,10 @@ func setupMiddleware(e *echo.Echo) {
 		}
 
 		// multipart/form-dataの場合は詳細なボディ出力をスキップ
-		if contentType != "" && (contentType == "application/json" || !strings.Contains(contentType, "multipart/form-data")) {
-			fmt.Printf("Request Body: %s\n", string(reqBody))
-		} else {
+		if contentType != "" && (strings.Contains(contentType, "multipart/form-data")) {
 			fmt.Printf("Request Body: [multipart/form-data - binary content skipped]\n")
+			fmt.Printf("Content-Type: %s\n", contentType)
+		} else if contentType != "" {
 			fmt.Printf("Content-Type: %s\n", contentType)
 		}
 

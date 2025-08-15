@@ -10,7 +10,7 @@ import (
 
 type IBeanRepository interface {
 	GetById(bean *model.Bean, id uint) error
-	GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID) error
+	GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error
 	SearchBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error
 	Create(bean *model.Bean) error
 	Update(bean *model.Bean) error
@@ -39,7 +39,12 @@ func (br *beanRepository) GetById(bean *model.Bean, id uint) error {
 	return nil
 }
 
-func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID) error {
+func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error {
+	limit := 10 // デフォルトの取得件数
+	if params.Limit > 0 {
+		limit = params.Limit
+	}
+
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -50,6 +55,7 @@ func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID
 		Preload("Farm").
 		Preload("Farmer").
 		Where("user_id = ?", userID).
+		Limit(limit).
 		Order("created_at desc").
 		Find(beans).Error; err != nil {
 		return err
@@ -69,7 +75,7 @@ func (br *beanRepository) SearchBeansByUserId(beans *[]model.Bean, userID uuid.U
 		Preload("Farmer").
 		Where("beans.user_id = ?", userID)
 
-	// name_likeパラメータが存在する場合、複数のフィールドでLIKE検索を追加
+	// name_likeパラメータが存在する場合、関係テーブルを検索
 	if params.NameLike != "" {
 		searchTerm := "%" + params.NameLike + "%"
 		query = query.Where(`
@@ -83,15 +89,21 @@ func (br *beanRepository) SearchBeansByUserId(beans *[]model.Bean, userID uuid.U
 		`, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm)
 	}
 
-	// limitパラメータが存在する場合、制限を追加
+	// カーソルページネーション
+	if params.Cursor > 0 {
+		// Cursorが指定された場合、IDが指定されたカーソル値より小さいものを取得（降順での「次のページ」）
+		query = query.Where("beans.id < ?", params.Cursor)
+	}
+
+	// limit
 	if params.Limit > 0 {
 		query = query.Limit(params.Limit)
 	}
 
-	// Order by created_at desc
-	query = query.Order("beans.created_at desc")
+	// Order
+	query = query.Order("beans.id desc")
 
-	// 通常のFind（DISTINCTは不要）
+	// 実行
 	if err := query.Find(beans).Error; err != nil {
 		return err
 	}

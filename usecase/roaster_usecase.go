@@ -3,6 +3,7 @@ package usecase
 import (
 	"c0fee-api/common"
 	"c0fee-api/dto"
+	"c0fee-api/infrastructure/s3"
 	"c0fee-api/model"
 	"c0fee-api/repository"
 )
@@ -12,7 +13,8 @@ type IRoasterUsecase interface {
 }
 
 type roasterUsecase struct {
-	rr repository.IRoasterRepository
+	rr        repository.IRoasterRepository
+	s3Service s3.IS3Service
 }
 
 func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, error) {
@@ -33,17 +35,26 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 
 	roastersResponse := make([]dto.RoasterOutput, len(roasters))
 	for i, roaster := range roasters {
+		var imageURL *string
+		if roaster.ImageKey != nil && *roaster.ImageKey != "" {
+			url, err := ru.s3Service.GenerateRoasterImageURL(*roaster.ImageKey)
+			if err == nil && url != "" {
+				imageURL = &url
+			}
+		}
+
 		roastersResponse[i] = dto.RoasterOutput{
-			ID:      roaster.ID,
-			Name:    roaster.Name,
-			Address: roaster.Address,
-			WebURL:  roaster.WebURL,
+			ID:       roaster.ID,
+			Name:     roaster.Name,
+			Address:  roaster.Address,
+			WebURL:   roaster.WebURL,
+			ImageURL: imageURL,
 		}
 	}
 
 	return dto.RoastersOutput{Roasters: roastersResponse, Count: uint(len(roasters))}, nil
 }
 
-func NewRoasterUsecase(cr repository.IRoasterRepository) IRoasterUsecase {
-	return &roasterUsecase{cr}
+func NewRoasterUsecase(rr repository.IRoasterRepository, s3Service s3.IS3Service) IRoasterUsecase {
+	return &roasterUsecase{rr, s3Service}
 }

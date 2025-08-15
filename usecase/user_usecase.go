@@ -53,15 +53,13 @@ func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) 
 	}
 
 	beans := []model.Bean{}
-
-	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
-	if params.NameLike != "" || params.Limit > 0 {
+	if params.NameLike != "" || params.Cursor > 0 {
 		err := uu.br.SearchBeansByUserId(&beans, storedUser.ID, params)
 		if err != nil {
 			return dto.UserBeansOutput{}, err
 		}
 	} else {
-		err := uu.br.GetBeansByUserId(&beans, storedUser.ID)
+		err := uu.br.GetBeansByUserId(&beans, storedUser.ID, params)
 		if err != nil {
 			return dto.UserBeansOutput{}, err
 		}
@@ -85,10 +83,19 @@ func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) 
 		beansResponse[i] = converter.ConvertToBeanResponse(&bean, imageURL)
 	}
 
+	// カーソルページネーション用の情報を生成
+	var nextCursor *uint
+	if len(beans) > 0 && params.Limit > 0 && len(beans) == params.Limit {
+		// 最後のBeanのIDをnext_cursorとして設定
+		lastBeanID := beans[len(beans)-1].ID
+		nextCursor = &lastBeanID
+	}
+
 	return dto.UserBeansOutput{
-		User:  userResponse,
-		Beans: beansResponse,
-		Count: uint(len(beans)),
+		User:       userResponse,
+		Beans:      beansResponse,
+		Count:      uint(len(beans)),
+		NextCursor: nextCursor,
 	}, nil
 }
 

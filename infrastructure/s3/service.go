@@ -18,6 +18,7 @@ type IS3Service interface {
 	GeneratePresignedURL(bucket, objectKey string, expiry time.Duration) (string, error)
 	GenerateBeanImageURL(imageKey string) (string, error)
 	GenerateUserAvatarURL(avatarKey string) (string, error)
+	GenerateRoasterImageURL(imageKey string) (string, error)
 	UploadBeanImage(beanID uint, imageFile *multipart.FileHeader) (string, error)
 }
 
@@ -45,23 +46,25 @@ func (s *s3Service) GeneratePresignedURL(bucket, objectKey string, expiry time.D
 }
 
 func (s *s3Service) GenerateBeanImageURL(imageKey string) (string, error) {
+	return s.generateImageURL("beans", imageKey)
+}
+
+func (s *s3Service) GenerateUserAvatarURL(avatarKey string) (string, error) {
+	return s.generateImageURL("users", avatarKey)
+}
+
+func (s *s3Service) GenerateRoasterImageURL(imageKey string) (string, error) {
+	return s.generateImageURL("roasters", imageKey)
+}
+
+// 共通の画像URL生成関数
+func (s *s3Service) generateImageURL(prefix, imageKey string) (string, error) {
 	if imageKey == "" || imageKey == "null" {
 		return "", nil
 	}
 
 	bucket := os.Getenv("S3_BUCKET")
-	objectKey := "beans/" + imageKey
-
-	return s.GeneratePresignedURL(bucket, objectKey, time.Hour*1)
-}
-
-func (s *s3Service) GenerateUserAvatarURL(avatarKey string) (string, error) {
-	if avatarKey == "" || avatarKey == "null" {
-		return "", nil
-	}
-
-	bucket := os.Getenv("S3_BUCKET")
-	objectKey := "users/" + avatarKey
+	objectKey := prefix + "/" + imageKey
 
 	return s.GeneratePresignedURL(bucket, objectKey, time.Hour*1)
 }
