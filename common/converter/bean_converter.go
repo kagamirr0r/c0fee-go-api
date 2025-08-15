@@ -66,33 +66,33 @@ func ConvertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanOutput {
 	}
 
 	// User (IDは string)
-	response.User = dto.IdNameOutput{
+	response.User = dto.IdNameSummary{
 		ID:   bean.User.ID.String(),
 		Name: bean.User.Name,
 	}
 
 	// Roaster, Country, etc. (IDは uint)
-	response.Roaster = dto.IdNameOutput{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
-	response.Country = dto.IdNameOutput{ID: bean.Country.ID, Name: bean.Country.Name}
+	response.Roaster = dto.IdNameSummary{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
+	response.Country = dto.IdNameSummary{ID: bean.Country.ID, Name: bean.Country.Name}
 
 	// Optional fields
 	if bean.Area != nil {
-		response.Area = &dto.IdNameOutput{ID: bean.Area.ID, Name: bean.Area.Name}
+		response.Area = &dto.IdNameSummary{ID: bean.Area.ID, Name: bean.Area.Name}
 	}
 	if bean.Farm != nil {
-		response.Farm = &dto.IdNameOutput{ID: bean.Farm.ID, Name: bean.Farm.Name}
+		response.Farm = &dto.IdNameSummary{ID: bean.Farm.ID, Name: bean.Farm.Name}
 	}
 	if bean.Farmer != nil {
-		response.Farmer = &dto.IdNameOutput{ID: bean.Farmer.ID, Name: bean.Farmer.Name}
+		response.Farmer = &dto.IdNameSummary{ID: bean.Farmer.ID, Name: bean.Farmer.Name}
 	}
 	if bean.ProcessMethod != nil {
-		response.ProcessMethod = &dto.IdNameOutput{ID: bean.ProcessMethod.ID, Name: bean.ProcessMethod.Name}
+		response.ProcessMethod = &dto.IdNameSummary{ID: bean.ProcessMethod.ID, Name: bean.ProcessMethod.Name}
 	}
 
 	// Varieties
-	varieties := make([]dto.IdNameOutput, len(bean.Varieties))
+	varieties := make([]dto.IdNameSummary, len(bean.Varieties))
 	for i, variety := range bean.Varieties {
-		varieties[i] = dto.IdNameOutput{ID: variety.ID, Name: variety.Name}
+		varieties[i] = dto.IdNameSummary{ID: variety.ID, Name: variety.Name}
 	}
 	response.Varieties = varieties
 

@@ -6,7 +6,7 @@ type IdRef struct {
 }
 
 // 汎用 Output型
-type IdNameOutput struct {
+type IdNameSummary struct {
 	ID   interface{} `json:"id"` // uint または string
 	Name string      `json:"name"`
 }

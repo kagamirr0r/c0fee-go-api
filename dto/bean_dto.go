@@ -34,14 +34,14 @@ type CreateBeanRating struct {
 type BeanOutput struct {
 	ID            uint                `json:"id"`
 	Name          *string             `json:"name,omitempty"`
-	User          IdNameOutput        `json:"user"`
-	Roaster       IdNameOutput        `json:"roaster"`
-	Country       IdNameOutput        `json:"country"`
-	Area          *IdNameOutput       `json:"area,omitempty"`
-	Farm          *IdNameOutput       `json:"farm,omitempty"`
-	Farmer        *IdNameOutput       `json:"farmer,omitempty"`
-	ProcessMethod *IdNameOutput       `json:"process_method,omitempty"`
-	Varieties     []IdNameOutput      `json:"varieties,omitempty"`
+	User          IdNameSummary       `json:"user"`
+	Roaster       IdNameSummary       `json:"roaster"`
+	Country       IdNameSummary       `json:"country"`
+	Area          *IdNameSummary      `json:"area,omitempty"`
+	Farm          *IdNameSummary      `json:"farm,omitempty"`
+	Farmer        *IdNameSummary      `json:"farmer,omitempty"`
+	ProcessMethod *IdNameSummary      `json:"process_method,omitempty"`
+	Varieties     []IdNameSummary     `json:"varieties,omitempty"`
 	RoastLevel    string              `json:"roast_level"`
 	Price         *PriceOutput        `json:"price,omitempty"`
 	BeanRatings   []BeanRatingSummary `json:"bean_ratings"`
