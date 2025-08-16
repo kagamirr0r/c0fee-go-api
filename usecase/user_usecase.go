@@ -12,7 +12,7 @@ import (
 type IUserUsecase interface {
 	Create(user model.User) (dto.UserOutput, error)
 	Read(user model.User) (dto.UserOutput, error)
-	GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansOutput, error)
+	GetUserBeans(user model.User, params common.QueryParams) (dto.BeansOutput, error)
 }
 
 type userUsecase struct {
@@ -46,41 +46,36 @@ func (uu *userUsecase) Read(user model.User) (dto.UserOutput, error) {
 	return dto.UserOutput{ID: storedUser.ID.String(), Name: storedUser.Name, AvatarURL: avatarURL}, nil
 }
 
-func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (dto.UserBeansOutput, error) {
+func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) (dto.BeansOutput, error) {
 	storedUser := model.User{}
 	if err := uu.ur.GetById(&storedUser, user.ID); err != nil {
-		return dto.UserBeansOutput{}, err
+		return dto.BeansOutput{}, err
 	}
 
 	beans := []model.Bean{}
 	if params.NameLike != "" || params.Cursor > 0 {
 		err := uu.br.SearchBeansByUserId(&beans, storedUser.ID, params)
 		if err != nil {
-			return dto.UserBeansOutput{}, err
+			return dto.BeansOutput{}, err
 		}
 	} else {
 		err := uu.br.GetBeansByUserId(&beans, storedUser.ID, params)
 		if err != nil {
-			return dto.UserBeansOutput{}, err
+			return dto.BeansOutput{}, err
 		}
 	}
 
-	userResponse := dto.UserOutput{
-		ID:   storedUser.ID.String(),
-		Name: storedUser.Name,
-	}
-
-	beansResponse := make([]dto.BeanOutput, len(beans))
+	userBeans := make([]dto.BeanSummary, len(beans))
 	for i, bean := range beans {
 		var imageURL string
 		if bean.ImageKey != nil {
 			url, err := uu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
 			if err != nil {
-				return dto.UserBeansOutput{}, err
+				return dto.BeansOutput{}, err
 			}
 			imageURL = url
 		}
-		beansResponse[i] = converter.ConvertToBeanResponse(&bean, imageURL)
+		userBeans[i] = converter.ConvertBeanToBeanSummary(&bean, imageURL)
 	}
 
 	// カーソルページネーション用の情報を生成
@@ -91,12 +86,13 @@ func (uu *userUsecase) GetUserBeans(user model.User, params common.QueryParams) 
 		nextCursor = &lastBeanID
 	}
 
-	return dto.UserBeansOutput{
-		User:       userResponse,
-		Beans:      beansResponse,
+	beansResponse := dto.BeansOutput{
+		Beans:      userBeans,
 		Count:      uint(len(beans)),
 		NextCursor: nextCursor,
-	}, nil
+	}
+
+	return beansResponse, nil
 }
 
 func NewUserUsecase(ur repository.IUserRepository, br repository.IBeanRepository, s3Service s3.IS3Service) IUserUsecase {

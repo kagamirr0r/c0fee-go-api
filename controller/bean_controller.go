@@ -15,6 +15,7 @@ import (
 type IBeanController interface {
 	Read(c echo.Context) error
 	Create(c echo.Context) error
+	Update(c echo.Context) error
 }
 
 type beanController struct {
@@ -82,12 +83,67 @@ func (bc *beanController) Create(c echo.Context) error {
 		})
 	}
 
-	response := dto.CreateBeanOutput{
-		Bean:    bean,
-		Message: "Bean created successfully",
+	return c.JSON(http.StatusCreated, bean)
+}
+
+func (bc *beanController) Update(c echo.Context) error {
+	// Bean IDを取得
+	id := c.Param("id")
+	beanID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid bean ID format",
+		})
 	}
 
-	return c.JSON(http.StatusCreated, response)
+	// ユーザーIDを取得（認証ミドルウェアから）
+	userID := c.Request().Header.Get("X-C0fee-User-ID")
+	if userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "User ID is required",
+		})
+	}
+
+	var req dto.CreateBeanInput
+	// JSON文字列をBindで取得
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("Failed to bind request data: %v", err),
+		})
+	}
+
+	// 画像ファイルをFormFileで取得
+	file, err := c.FormFile("image")
+	if err != nil {
+		// ファイルがなくてもエラーにしない
+		file = nil
+	}
+	req.ImageFile = file
+
+	// Beanを更新
+	bean, err := bc.bu.Update(uint(beanID), userID, req.Data, req.ImageFile)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+		}
+		if strings.Contains(err.Error(), "access denied") {
+			return c.JSON(http.StatusForbidden, map[string]string{
+				"error": err.Error(),
+			})
+		}
+		if strings.Contains(err.Error(), "validation failed") {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": fmt.Sprintf("Failed to update bean: %v", err),
+		})
+	}
+
+	return c.JSON(http.StatusOK, bean)
 }
 
 func NewBeanController(bu usecase.IBeanUsecase) IBeanController {

@@ -57,7 +57,8 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
 	e.GET("/beans/:id", bc.Read)
-	e.POST("/beans", bc.Create) // Bean作成エンドポイントを追加
+	e.POST("/beans", bc.Create)
+	e.PUT("/beans/:id", bc.Update)
 	e.GET("/countries", cc.List)
 	e.GET("/countries/:id", cc.Read)
 	e.GET("/countries/:id", cc.Read)

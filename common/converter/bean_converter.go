@@ -9,7 +9,7 @@ import (
 )
 
 // DTO -> Model
-func ConvertCreateBeanDataToBean(userID string, data dto.CreateBeanData) model.Bean {
+func ConvertBeanInputToBean(userID string, data dto.BeanInput) model.Bean {
 	// RoastLevel の変換
 	var roastLevel model.RoastLevelType
 	switch data.RoastLevel {
@@ -52,7 +52,7 @@ func ConvertCreateBeanDataToBean(userID string, data dto.CreateBeanData) model.B
 }
 
 // Model -> DTO
-func ConvertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanOutput {
+func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 	response := dto.BeanOutput{
 		ID:         bean.ID,
 		Name:       bean.Name,
@@ -98,7 +98,7 @@ func ConvertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanOutput {
 
 	// Price
 	if bean.Price != nil {
-		response.Price = &dto.PriceOutput{
+		response.Price = &dto.PriceSummary{
 			Amount:   float64(*bean.Price),
 			Currency: string(bean.Currency),
 		}
@@ -120,6 +120,46 @@ func ConvertToBeanResponse(bean *model.Bean, imageURL string) dto.BeanOutput {
 		}
 	}
 	response.BeanRatings = ratings
+
+	return response
+}
+
+func ConvertBeanToBeanSummary(bean *model.Bean, imageURL string) dto.BeanSummary {
+	response := dto.BeanSummary{
+		ID:        bean.ID,
+		Name:      bean.Name,
+		CreatedAt: bean.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: bean.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if imageURL != "" {
+		response.ImageURL = &imageURL
+	}
+
+	// Roaster, Country, etc. (IDは uint)
+	response.Roaster = dto.IdNameSummary{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
+	response.Country = dto.IdNameSummary{ID: bean.Country.ID, Name: bean.Country.Name}
+
+	// Optional fields
+	if bean.Area != nil {
+		response.Area = &dto.IdNameSummary{ID: bean.Area.ID, Name: bean.Area.Name}
+	}
+	if bean.Farm != nil {
+		response.Farm = &dto.IdNameSummary{ID: bean.Farm.ID, Name: bean.Farm.Name}
+	}
+	if bean.Farmer != nil {
+		response.Farmer = &dto.IdNameSummary{ID: bean.Farmer.ID, Name: bean.Farmer.Name}
+	}
+	if bean.ProcessMethod != nil {
+		response.ProcessMethod = &dto.IdNameSummary{ID: bean.ProcessMethod.ID, Name: bean.ProcessMethod.Name}
+	}
+
+	// Varieties
+	varieties := make([]dto.IdNameSummary, len(bean.Varieties))
+	for i, variety := range bean.Varieties {
+		varieties[i] = dto.IdNameSummary{ID: variety.ID, Name: variety.Name}
+	}
+	response.Varieties = varieties
 
 	return response
 }

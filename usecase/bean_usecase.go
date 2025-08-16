@@ -20,6 +20,7 @@ import (
 type IBeanUsecase interface {
 	Read(bean model.Bean) (dto.BeanOutput, error)
 	Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
+	Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
 }
 
 type beanUsecase struct {
@@ -45,7 +46,7 @@ func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
 		imageURL = url
 	}
 
-	return converter.ConvertToBeanResponse(&storedBean, imageURL), nil
+	return converter.ConvertBeanToOutput(&storedBean, imageURL), nil
 }
 
 func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
@@ -56,7 +57,7 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 	}
 
 	// JSONデータをパース
-	var data dto.CreateBeanData
+	var data dto.BeanInput
 	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("invalid JSON data: %w", err)
 	}
@@ -73,7 +74,7 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 	}
 
 	// Beanエンティティを作成
-	bean := converter.ConvertCreateBeanDataToBean(userID, data)
+	bean := converter.ConvertBeanInputToBean(userID, data)
 	// 最初にBeanを保存（画像なしで）
 	if err := bu.br.Create(&bean); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to create bean: %w", err)
@@ -129,7 +130,87 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 		imageURL, _ = bu.s3Service.GenerateBeanImageURL(*createdBean.ImageKey)
 	}
 
-	return converter.ConvertToBeanResponse(&createdBean, imageURL), nil
+	return converter.ConvertBeanToOutput(&createdBean, imageURL), nil
+}
+
+func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
+	// ユーザーの存在確認
+	var user model.User
+	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("user not found: %w", err)
+	}
+
+	// Beanの存在確認と所有者チェック
+	var targetBean model.Bean
+	if err := bu.br.GetById(&targetBean, beanID); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("bean not found: %w", err)
+	}
+
+	// 所有者チェック
+	if targetBean.UserID.String() != userID {
+		return dto.BeanOutput{}, fmt.Errorf("access denied: you can only update your own beans")
+	}
+
+	// JSONデータをパース
+	var data dto.BeanInput
+	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("invalid JSON data: %w", err)
+	}
+
+	// validatorを使用してJsonデータをバリデーション
+	if err := bu.validator.Struct(data); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("validation failed: %w", err)
+	}
+
+	// 画像ファイルのバリデーション（ファイルがある場合のみ）
+	if imageFile != nil {
+		if err := bu.validateImageFile(imageFile); err != nil {
+			return dto.BeanOutput{}, err
+		}
+	}
+
+	// 既存のBeanを更新データで上書き
+	updatedBean := converter.ConvertBeanInputToBean(userID, data)
+	updatedBean.ID = beanID                      // IDは変更しない
+	updatedBean.CreatedAt = targetBean.CreatedAt // 作成日時は保持
+
+	// 既存の画像キーを保持（新しい画像がない場合）
+	if imageFile == nil {
+		updatedBean.ImageKey = targetBean.ImageKey
+	}
+
+	// 新しい画像をS3にアップロード（画像ファイルがある場合）
+	if imageFile != nil {
+		// 古い画像を削除（存在する場合）
+		if targetBean.ImageKey != nil {
+			// TODO: S3から古い画像を削除するメソッドを実装する場合は、ここで呼び出す
+		}
+
+		imageKey, err := bu.s3Service.UploadBeanImage(beanID, imageFile)
+		if err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
+		}
+		updatedBean.ImageKey = &imageKey
+	}
+
+	// Beanを更新
+	if err := bu.br.Update(&updatedBean); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("failed to update bean: %w", err)
+	}
+
+	// 更新されたBeanを取得（関連データ含む）
+	var resultBean model.Bean
+	if err := bu.br.GetById(&resultBean, beanID); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("failed to get updated bean: %w", err)
+	}
+
+	// 画像URLを生成
+	var imageURL string
+	if resultBean.ImageKey != nil {
+		imageURL, _ = bu.s3Service.GenerateBeanImageURL(*resultBean.ImageKey)
+	}
+
+	return converter.ConvertBeanToOutput(&resultBean, imageURL), nil
 }
 
 func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error {
