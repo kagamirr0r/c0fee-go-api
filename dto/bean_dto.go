@@ -62,11 +62,12 @@ type BeanOutput struct {
 }
 
 type BeanRatingSummary struct {
-	ID         uint    `json:"id"`
-	Bitterness int     `json:"bitterness"`
-	Acidity    int     `json:"acidity"`
-	Body       int     `json:"body"`
-	FlavorNote *string `json:"flavor_note,omitempty"`
+	ID         uint          `json:"id"`
+	User       IdNameSummary `json:"user"`
+	Bitterness int           `json:"bitterness"`
+	Acidity    int           `json:"acidity"`
+	Body       int           `json:"body"`
+	FlavorNote *string       `json:"flavor_note,omitempty"`
 }
 
 type BeanSummary struct {
@@ -80,7 +81,6 @@ type BeanSummary struct {
 	Farmer        *IdNameSummary  `json:"farmer,omitempty"`
 	ProcessMethod *IdNameSummary  `json:"process_method,omitempty"`
 	Varieties     []IdNameSummary `json:"varieties,omitempty"`
-	Price         *PriceSummary   `json:"price,omitempty"`
 	ImageURL      *string         `json:"image_url,omitempty"`
 	CreatedAt     string          `json:"created_at"`
 	UpdatedAt     string          `json:"updated_at"`

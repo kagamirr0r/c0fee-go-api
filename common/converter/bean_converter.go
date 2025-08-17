@@ -113,6 +113,7 @@ func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 		}
 		ratings[i] = dto.BeanRatingSummary{
 			ID:         rating.ID,
+			User:       dto.IdNameSummary{ID: rating.User.ID.String(), Name: rating.User.Name},
 			Bitterness: rating.Bitterness,
 			Acidity:    rating.Acidity,
 			Body:       rating.Body,
