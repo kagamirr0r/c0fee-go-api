@@ -9,9 +9,9 @@ import (
 
 type BeanRating struct {
 	ID         uint `param:"id" gorm:"primary_key;" validate:"required"`
-	BeanID     uint `gorm:"not null" validate:"required"`
+	BeanID     uint `gorm:"not null;uniqueIndex:idx_bean_user" validate:"required"`
 	Bean       Bean
-	UserID     uuid.UUID `gorm:"type:uuid;not null" validate:"required"`
+	UserID     uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_bean_user" validate:"required"`
 	User       User
 	Bitterness int    `gorm:"comment:苦味の評価" validate:"required"`
 	Acidity    int    `gorm:"comment:酸味の評価" validate:"required"`
