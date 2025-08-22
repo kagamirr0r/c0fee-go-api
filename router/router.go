@@ -39,12 +39,9 @@ func setupMiddleware(e *echo.Echo) {
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus: true,
 		LogURI:    true,
-		BeforeNextFunc: func(c echo.Context) {
-			c.Set("customValueFromContext", 42) // Example custom value
-		},
+		LogMethod: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			customValue := c.Get("customValueFromContext")
-			fmt.Printf("REQUEST: URI: %s, Status: %d, Custom Value: %v\n", v.URI, v.Status, customValue)
+			fmt.Printf("REQUEST: %s %s, Status: %d\n", v.Method, v.URI, v.Status)
 			return nil
 		},
 	}))
