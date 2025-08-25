@@ -3,62 +3,52 @@ package converter
 import (
 	"c0fee-api/dto"
 	"c0fee-api/model"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 // DTO -> Model
-func ConvertBeanInputToBean(userID string, data dto.BeanInput) model.Bean {
-	// RoastLevel の変換
-	var roastLevel model.RoastLevelType
-	switch data.RoastLevel {
-	case 1:
-		roastLevel = model.Light
-	case 2:
-		roastLevel = model.MediumLight
-	case 3:
-		roastLevel = model.Medium
-	case 4:
-		roastLevel = model.MediumDark
-	case 5:
-		roastLevel = model.Dark
-	default:
-		roastLevel = model.Medium
-	}
-
+func ConvertBeanInputToBean(userID string, data dto.BeanInput) (model.Bean, []uint) {
+	fmt.Println("data in converter:", data)
 	bean := model.Bean{
-		Name:       data.Name,
-		UserID:     uuid.MustParse(userID),
-		CountryID:  data.Country.ID,
-		RoasterID:  data.Roaster.ID,
-		RoastLevel: roastLevel,
-		Price:      data.Price,
-		Currency:   model.JPY, // デフォルト
+		Name:         data.Name,
+		UserID:       uuid.MustParse(userID),
+		CountryID:    data.CountryID,
+		RoasterID:    data.RoasterID,
+		RoastLevelID: data.RoastLevelID,
+		Price:        data.Price,
+		Currency:     model.JPY, // デフォルト
 	}
 
 	// Optional fields
-	if data.Area != nil {
-		bean.AreaID = &data.Area.ID
+	if data.ID != nil {
+		bean.ID = *data.ID
 	}
-	if data.Farm != nil {
-		bean.FarmID = &data.Farm.ID
+	if data.AreaID != nil {
+		bean.AreaID = data.AreaID
 	}
-	if data.ProcessMethod != nil {
-		bean.ProcessMethodID = &data.ProcessMethod.ID
+	if data.FarmID != nil {
+		bean.FarmID = data.FarmID
+	}
+	if data.FarmerID != nil {
+		bean.FarmerID = data.FarmerID
+	}
+	if data.ProcessMethodID != nil {
+		bean.ProcessMethodID = data.ProcessMethodID
 	}
 
-	return bean
+	return bean, data.VarietyIDs
 }
 
 // Model -> DTO
 func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 	response := dto.BeanOutput{
-		ID:         bean.ID,
-		Name:       bean.Name,
-		RoastLevel: string(bean.RoastLevel),
-		CreatedAt:  bean.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:  bean.UpdatedAt.Format(time.RFC3339),
+		ID:        bean.ID,
+		Name:      bean.Name,
+		CreatedAt: bean.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: bean.UpdatedAt.Format(time.RFC3339),
 	}
 
 	if imageURL != "" {
@@ -71,9 +61,10 @@ func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 		Name: bean.User.Name,
 	}
 
-	// Roaster, Country, etc. (IDは uint)
+	// Roaster, Country, RoastLevel etc. (IDは uint)
 	response.Roaster = dto.IdNameSummary{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
 	response.Country = dto.IdNameSummary{ID: bean.Country.ID, Name: bean.Country.Name}
+	response.RoastLevel = dto.IdNameSummary{ID: bean.RoastLevel.ID, Name: bean.RoastLevel.Name}
 
 	// Optional fields
 	if bean.Area != nil {

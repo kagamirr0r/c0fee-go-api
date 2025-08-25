@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/go-playground/validator"
@@ -50,34 +51,24 @@ func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
 }
 
 func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
-	// ユーザーの存在確認
-	var user model.User
-	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("user not found: %w", err)
-	}
-
-	// JSONデータをパース
-	var data dto.BeanInput
-	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("invalid JSON data: %w", err)
-	}
-	// validatorを使用してJsonデータをバリデーション
-	if err := bu.validator.Struct(data); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("validation failed: %w", err)
-	}
-
-	// 画像ファイルのバリデーション（ファイルがある場合のみ）
-	if imageFile != nil {
-		if err := bu.validateImageFile(imageFile); err != nil {
-			return dto.BeanOutput{}, err
-		}
+	// 共通バリデーション
+	data, err := bu.validateInputData(userID, dataJSON, imageFile)
+	if err != nil {
+		return dto.BeanOutput{}, err
 	}
 
 	// Beanエンティティを作成
-	bean := converter.ConvertBeanInputToBean(userID, data)
+	bean, varietyIDs := converter.ConvertBeanInputToBean(userID, data)
 	// 最初にBeanを保存（画像なしで）
 	if err := bu.br.Create(&bean); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to create bean: %w", err)
+	}
+
+	// 品種の関連付け
+	if len(varietyIDs) > 0 {
+		if err := bu.br.SetVarieties(bean.ID, varietyIDs); err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to set varieties: %w", err)
+		}
 	}
 
 	// 画像をS3にアップロード（画像ファイルがある場合のみ）
@@ -102,20 +93,8 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 
 	// BeanRatingがある場合は作成
 	if data.BeanRating != nil {
-		beanRating := model.BeanRating{
-			BeanID:     bean.ID,
-			UserID:     uuid.MustParse(userID),
-			Bitterness: data.BeanRating.Bitterness,
-			Acidity:    data.BeanRating.Acidity,
-			Body:       data.BeanRating.Body,
-		}
-
-		if data.BeanRating.FlavorNote != nil {
-			beanRating.FlavorNote = *data.BeanRating.FlavorNote
-		}
-
-		if err := bu.brr.Create(&beanRating); err != nil {
-			return dto.BeanOutput{}, fmt.Errorf("failed to create bean rating: %w", err)
+		if err := bu.createBeanRating(bean.ID, userID, data.BeanRating); err != nil {
+			return dto.BeanOutput{}, err
 		}
 
 		// BeanRatingを含めて再取得
@@ -124,65 +103,43 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 		}
 	}
 
-	// 画像URLを生成
-	var imageURL string
-	if createdBean.ImageKey != nil {
-		imageURL, _ = bu.s3Service.GenerateBeanImageURL(*createdBean.ImageKey)
-	}
-
-	return converter.ConvertBeanToOutput(&createdBean, imageURL), nil
+	return bu.generateBeanOutput(&createdBean)
 }
 
 func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
-	// ユーザーの存在確認
-	var user model.User
-	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("user not found: %w", err)
+	fmt.Println("dataJSON:", dataJSON)
+	// 共通バリデーション
+	data, err := bu.validateInputData(userID, dataJSON, imageFile)
+	if err != nil {
+		return dto.BeanOutput{}, err
 	}
 
 	// Beanの存在確認と所有者チェック
-	var targetBean model.Bean
-	if err := bu.br.GetById(&targetBean, beanID); err != nil {
+	var existingBean model.Bean
+	if err := bu.br.GetById(&existingBean, beanID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("bean not found: %w", err)
 	}
 
 	// 所有者チェック
-	if targetBean.UserID.String() != userID {
+	if existingBean.UserID.String() != userID {
 		return dto.BeanOutput{}, fmt.Errorf("access denied: you can only update your own beans")
 	}
-
-	// JSONデータをパース
-	var data dto.BeanInput
-	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("invalid JSON data: %w", err)
-	}
-
-	// validatorを使用してJsonデータをバリデーション
-	if err := bu.validator.Struct(data); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("validation failed: %w", err)
-	}
-
-	// 画像ファイルのバリデーション（ファイルがある場合のみ）
-	if imageFile != nil {
-		if err := bu.validateImageFile(imageFile); err != nil {
-			return dto.BeanOutput{}, err
-		}
-	}
+	fmt.Println("dataJSON:")
+	fmt.Println(dataJSON)
 
 	// 既存のBeanを更新データで上書き
-	updatedBean := converter.ConvertBeanInputToBean(userID, data)
-	updatedBean.ID = beanID                      // IDは変更しない
-	updatedBean.CreatedAt = targetBean.CreatedAt // 作成日時は保持
+	beanToUpdate, varietyIDs := converter.ConvertBeanInputToBean(userID, data) // IDは変更しない
+	beanToUpdate.CreatedAt = existingBean.CreatedAt                            // 作成日時は保持
 
 	// 既存の画像キーを保持（新しい画像がない場合）
 	if imageFile == nil {
-		updatedBean.ImageKey = targetBean.ImageKey
+		beanToUpdate.ImageKey = existingBean.ImageKey
 	}
 
 	// 新しい画像をS3にアップロード（画像ファイルがある場合）
 	if imageFile != nil {
 		// 古い画像を削除（存在する場合）
-		if targetBean.ImageKey != nil {
+		if existingBean.ImageKey != nil {
 			// TODO: S3から古い画像を削除するメソッドを実装する場合は、ここで呼び出す
 		}
 
@@ -190,27 +147,33 @@ func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, image
 		if err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
 		}
-		updatedBean.ImageKey = &imageKey
+		beanToUpdate.ImageKey = &imageKey
 	}
 
 	// Beanを更新
-	if err := bu.br.Update(&updatedBean); err != nil {
+	if err := bu.br.Update(&beanToUpdate); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to update bean: %w", err)
 	}
 
+	// 品種の関連付けを更新
+	if err := bu.br.SetVarieties(beanID, varietyIDs); err != nil {
+		return dto.BeanOutput{}, fmt.Errorf("failed to update varieties: %w", err)
+	}
+
+	// BeanRatingがある場合は作成または更新
+	if data.BeanRating != nil {
+		if err := bu.handleBeanRating(beanID, userID, data.BeanRating); err != nil {
+			return dto.BeanOutput{}, err
+		}
+	}
+
 	// 更新されたBeanを取得（関連データ含む）
-	var resultBean model.Bean
-	if err := bu.br.GetById(&resultBean, beanID); err != nil {
+	var updatedBean model.Bean
+	if err := bu.br.GetById(&updatedBean, beanID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to get updated bean: %w", err)
 	}
 
-	// 画像URLを生成
-	var imageURL string
-	if resultBean.ImageKey != nil {
-		imageURL, _ = bu.s3Service.GenerateBeanImageURL(*resultBean.ImageKey)
-	}
-
-	return converter.ConvertBeanToOutput(&resultBean, imageURL), nil
+	return bu.generateBeanOutput(&updatedBean)
 }
 
 func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error {
@@ -224,19 +187,105 @@ func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error 
 	ext := strings.ToLower(filepath.Ext(imageFile.Filename))
 	allowedExts := []string{".jpg", ".jpeg", ".png", ".webp"}
 
-	valid := false
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			valid = true
-			break
-		}
-	}
-
-	if !valid {
+	if !slices.Contains(allowedExts, ext) {
 		return errors.New("image file must be jpg, jpeg, png, or webp")
 	}
 
 	return nil
+}
+
+// validateInputData は共通のバリデーション処理を実行します
+func (bu *beanUsecase) validateInputData(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanInput, error) {
+	// ユーザーの存在確認
+	var user model.User
+	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
+		return dto.BeanInput{}, fmt.Errorf("user not found: %w", err)
+	}
+
+	// JSONデータをパース
+	var data dto.BeanInput
+	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
+		return dto.BeanInput{}, fmt.Errorf("invalid JSON data: %w", err)
+	}
+
+	// validatorを使用してJsonデータをバリデーション
+	if err := bu.validator.Struct(data); err != nil {
+		return dto.BeanInput{}, fmt.Errorf("validation failed: %w", err)
+	}
+
+	// 画像ファイルのバリデーション（ファイルがある場合のみ）
+	if imageFile != nil {
+		if err := bu.validateImageFile(imageFile); err != nil {
+			return dto.BeanInput{}, err
+		}
+	}
+
+	return data, nil
+}
+
+// createBeanRating は新しいBeanRatingを作成します
+func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
+	beanRating := model.BeanRating{
+		BeanID:     beanID,
+		UserID:     uuid.MustParse(userID),
+		Bitterness: ratingData.Bitterness,
+		Acidity:    ratingData.Acidity,
+		Body:       ratingData.Body,
+	}
+
+	if ratingData.FlavorNote != nil {
+		beanRating.FlavorNote = *ratingData.FlavorNote
+	}
+
+	if err := bu.brr.Create(&beanRating); err != nil {
+		return fmt.Errorf("failed to create bean rating: %w", err)
+	}
+
+	return nil
+}
+
+// handleBeanRating はBeanRatingの作成または更新を処理します
+func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
+	if ratingData.ID != nil {
+		// IDがある場合は更新
+		beanRating := model.BeanRating{
+			ID:         uint(*ratingData.ID),
+			BeanID:     beanID,
+			UserID:     uuid.MustParse(userID),
+			Bitterness: ratingData.Bitterness,
+			Acidity:    ratingData.Acidity,
+			Body:       ratingData.Body,
+		}
+
+		if ratingData.FlavorNote != nil {
+			beanRating.FlavorNote = *ratingData.FlavorNote
+		}
+
+		if err := bu.brr.UpdateByID(&beanRating); err != nil {
+			return fmt.Errorf("failed to update bean rating: %w", err)
+		}
+	} else {
+		// IDがない場合は新規作成
+		if err := bu.createBeanRating(beanID, userID, ratingData); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// generateBeanOutput は画像URLを生成してBeanOutputを作成します
+func (bu *beanUsecase) generateBeanOutput(bean *model.Bean) (dto.BeanOutput, error) {
+	var imageURL string
+	if bean.ImageKey != nil {
+		url, err := bu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
+		if err != nil {
+			return dto.BeanOutput{}, fmt.Errorf("failed to generate image URL: %w", err)
+		}
+		imageURL = url
+	}
+
+	return converter.ConvertBeanToOutput(bean, imageURL), nil
 }
 
 func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, brr repository.IBeanRatingRepository, s3Service s3.IS3Service, v *validator.Validate) IBeanUsecase {

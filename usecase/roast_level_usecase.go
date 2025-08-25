@@ -3,26 +3,34 @@ package usecase
 import (
 	"c0fee-api/dto"
 	"c0fee-api/model"
+	"c0fee-api/repository"
 )
 
-type RoastLevelUsecase interface {
-	GetAllRoastLevels() []dto.RoastLevelOutput
+type IRoastLevelUsecase interface {
+	GetAll() ([]dto.IdNameSummary, error)
 }
 
-type roastLevelUsecase struct{}
+type roastLevelUsecase struct {
+	rlr repository.IRoastLevelRepository
+}
 
-func (rlu *roastLevelUsecase) GetAllRoastLevels() []dto.RoastLevelOutput {
-	roastLevels := make([]dto.RoastLevelOutput, len(model.AllRoastLevels))
-
-	for i, level := range model.AllRoastLevels {
-		roastLevels[i] = dto.RoastLevelOutput{
-			ID:   i + 1,
-			Name: string(level),
-		}
+func (rlu *roastLevelUsecase) GetAll() ([]dto.IdNameSummary, error) {
+	var roastLevels []model.RoastLevel
+	if err := rlu.rlr.GetAll(&roastLevels); err != nil {
+		return nil, err
 	}
-	return roastLevels
+
+	var result []dto.IdNameSummary
+	for _, rl := range roastLevels {
+		result = append(result, dto.IdNameSummary{
+			ID:   rl.ID,
+			Name: rl.Name,
+		})
+	}
+
+	return result, nil
 }
 
-func NewRoastLevelUsecase() RoastLevelUsecase {
-	return &roastLevelUsecase{}
+func NewRoastLevelUsecase(rlr repository.IRoastLevelRepository) IRoastLevelUsecase {
+	return &roastLevelUsecase{rlr}
 }
