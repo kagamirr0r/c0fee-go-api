@@ -107,7 +107,6 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 }
 
 func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
-	fmt.Println("dataJSON:", dataJSON)
 	// 共通バリデーション
 	data, err := bu.validateInputData(userID, dataJSON, imageFile)
 	if err != nil {
@@ -124,9 +123,6 @@ func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, image
 	if existingBean.UserID.String() != userID {
 		return dto.BeanOutput{}, fmt.Errorf("access denied: you can only update your own beans")
 	}
-	fmt.Println("dataJSON:")
-	fmt.Println(dataJSON)
-
 	// 既存のBeanを更新データで上書き
 	beanToUpdate, varietyIDs := converter.ConvertBeanInputToBean(userID, data) // IDは変更しない
 	beanToUpdate.CreatedAt = existingBean.CreatedAt                            // 作成日時は保持

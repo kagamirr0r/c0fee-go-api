@@ -3,7 +3,6 @@ package converter
 import (
 	"c0fee-api/dto"
 	"c0fee-api/model"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,7 +10,6 @@ import (
 
 // DTO -> Model
 func ConvertBeanInputToBean(userID string, data dto.BeanInput) (model.Bean, []uint) {
-	fmt.Println("data in converter:", data)
 	bean := model.Bean{
 		Name:         data.Name,
 		UserID:       uuid.MustParse(userID),
