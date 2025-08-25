@@ -14,6 +14,7 @@ type IBeanRepository interface {
 	SearchBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error
 	Create(bean *model.Bean) error
 	Update(bean *model.Bean) error
+	SetVarieties(beanID uint, varietyIDs []uint) error
 }
 
 type beanRepository struct {
@@ -25,6 +26,7 @@ func (br *beanRepository) GetById(bean *model.Bean, id uint) error {
 		Preload("User").
 		Preload("Roaster").
 		Preload("Country").
+		Preload("RoastLevel").
 		Preload("ProcessMethod").
 		Preload("Varieties").
 		Preload("Area").
@@ -49,6 +51,7 @@ func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID
 		Preload("User").
 		Preload("Roaster").
 		Preload("Country").
+		Preload("RoastLevel").
 		Preload("ProcessMethod").
 		Preload("Varieties").
 		Preload("Area").
@@ -68,6 +71,7 @@ func (br *beanRepository) SearchBeansByUserId(beans *[]model.Bean, userID uuid.U
 		Preload("User").
 		Preload("Roaster").
 		Preload("Country").
+		Preload("RoastLevel").
 		Preload("ProcessMethod").
 		Preload("Varieties").
 		Preload("Area").
@@ -121,6 +125,32 @@ func (br *beanRepository) Update(bean *model.Bean) error {
 	if err := br.db.Save(bean).Error; err != nil {
 		return err
 	}
+	return nil
+}
+
+func (br *beanRepository) SetVarieties(beanID uint, varietyIDs []uint) error {
+	var bean model.Bean
+	if err := br.db.First(&bean, beanID).Error; err != nil {
+		return err
+	}
+
+	// 既存の品種リレーションを削除
+	if err := br.db.Model(&bean).Association("Varieties").Clear(); err != nil {
+		return err
+	}
+
+	if len(varietyIDs) > 0 {
+		var varieties []model.Variety
+		if err := br.db.Where("id IN ?", varietyIDs).Find(&varieties).Error; err != nil {
+			return err
+		}
+
+		// 品種の関連付け
+		if err := br.db.Model(&bean).Association("Varieties").Append(varieties); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

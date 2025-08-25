@@ -9,6 +9,7 @@ import (
 type IBeanRatingRepository interface {
 	Create(beanRating *model.BeanRating) error
 	GetByBeanID(beanRatings *[]model.BeanRating, beanID uint) error
+	UpdateByID(beanRating *model.BeanRating) error
 }
 
 type beanRatingRepository struct {
@@ -27,6 +28,13 @@ func (brr *beanRatingRepository) GetByBeanID(beanRatings *[]model.BeanRating, be
 		Preload("User").
 		Where("bean_id = ?", beanID).
 		Find(beanRatings).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (brr *beanRatingRepository) UpdateByID(beanRating *model.BeanRating) error {
+	if err := brr.db.Save(beanRating).Error; err != nil {
 		return err
 	}
 	return nil
