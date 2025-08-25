@@ -25,7 +25,7 @@ func upAddImageKeyColumnToRoaster(ctx context.Context, tx *sql.Tx) error {
 	}
 
 	// Add image key column to roasters table
-	if err := db.Migrator().AddColumn(&model.Roaster{}, "ImageKey"); err != nil {
+	if err := db.Migrator().AddColumn(&model.Roaster{}, "image_key"); err != nil {
 		return fmt.Errorf("failed to add image key column to roasters: %w", err)
 	}
 
@@ -44,7 +44,7 @@ func downAddImageKeyColumnToRoaster(ctx context.Context, tx *sql.Tx) error {
 	}
 
 	// Drop image key column from roasters table
-	if err := db.Migrator().DropColumn(&model.Roaster{}, "ImageKey"); err != nil {
+	if err := db.Migrator().DropColumn(&model.Roaster{}, "image_key"); err != nil {
 		return fmt.Errorf("failed to drop image key column from roasters: %w", err)
 	}
 
