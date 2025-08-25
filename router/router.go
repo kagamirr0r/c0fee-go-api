@@ -49,7 +49,7 @@ func setupMiddleware(e *echo.Echo) {
 	e.Use(ValidateAuthorization)
 }
 
-func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.RoastLevelController) {
+func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.IRoastLevelController) {
 	e.POST("/users", uc.Create)
 	e.GET("/users/:id", uc.Read)
 	e.GET("/users/:id/beans", uc.ListUserBeans)
@@ -69,7 +69,7 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	// e.POST("/logout", uc.LogOut)
 }
 
-func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.RoastLevelController) *echo.Echo {
+func NewRouter(uc controller.IUserController, bc controller.IBeanController, cc controller.ICountryController, rc controller.IRoasterController, ac controller.IAreaController, fc controller.IFarmController, vc controller.IVarietyController, pmc controller.IProcessMethodController, rlc controller.IRoastLevelController) *echo.Echo {
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validator.New()} //custom_validator.go
 

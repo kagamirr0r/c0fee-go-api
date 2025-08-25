@@ -49,7 +49,7 @@ func (bc *beanController) Create(c echo.Context) error {
 		})
 	}
 
-	var req dto.CreateBeanInput
+	var req dto.BeanFormInput
 	// JSON文字列をBindで取得
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -104,7 +104,7 @@ func (bc *beanController) Update(c echo.Context) error {
 		})
 	}
 
-	var req dto.CreateBeanInput
+	var req dto.BeanFormInput
 	// JSON文字列をBindで取得
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{

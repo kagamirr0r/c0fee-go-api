@@ -5,29 +5,27 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"c0fee-api/dto"
+	"c0fee-api/common"
 	"c0fee-api/usecase"
 )
 
-type RoastLevelController interface {
+type IRoastLevelController interface {
 	GetAllRoastLevels(c echo.Context) error
 }
 
 type roastLevelController struct {
-	rlu usecase.RoastLevelUsecase
+	rlu usecase.IRoastLevelUsecase
 }
 
 func (rlc *roastLevelController) GetAllRoastLevels(c echo.Context) error {
-	roastLevels := rlc.rlu.GetAllRoastLevels()
-
-	res := dto.RoastLevelsOutput{
-		RoastLevels: roastLevels,
-		Count:       uint(len(roastLevels)),
+	roastLevels, err := rlc.rlu.GetAll()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, common.GenerateErrorResponse("INTERNAL_ERROR", "Failed to get roast levels", nil))
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, roastLevels)
 }
 
-func NewRoastLevelController(rlu usecase.RoastLevelUsecase) RoastLevelController {
+func NewRoastLevelController(rlu usecase.IRoastLevelUsecase) IRoastLevelController {
 	return &roastLevelController{rlu}
 }
