@@ -14,7 +14,7 @@ type Response struct {
 	Message   string       `json:"message"`
 	Errors    []FieldError `json:"errors"`
 	Content   interface{}  `json:"content"`
-	Timestamp string       `json:"timestamp"`
+	TimeStamp string       `json:"timestamp"`
 }
 
 func GenerateErrorResponse(code, message string, fieldErrors []FieldError) Response {
@@ -26,6 +26,6 @@ func GenerateErrorResponse(code, message string, fieldErrors []FieldError) Respo
 		Message:   message,
 		Errors:    fieldErrors,
 		Content:   nil,
-		Timestamp: time.Now().In(Jst).Format(time.RFC3339),
+		TimeStamp: time.Now().In(Jst).Format(time.RFC3339),
 	}
 }

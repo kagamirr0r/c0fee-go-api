@@ -28,6 +28,7 @@ func main() {
 	farmRepository := repository.NewFarmRepository(db)
 	processMethodRepository := repository.NewProcessMethodRepository(db)
 	roasterRepository := repository.NewRoasterRepository(db)
+	roastLevelRepository := repository.NewRoastLevelRepository(db)
 	userRepository := repository.NewUserRepository(db)
 	varietyRepository := repository.NewVarietyRepository(db)
 
@@ -41,7 +42,7 @@ func main() {
 	farmUsecase := usecase.NewFarmUsecase(farmRepository)
 	processMethodUsecase := usecase.NewProcessMethodUsecase(processMethodRepository)
 	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository, s3Service)
-	roastLevelUsecase := usecase.NewRoastLevelUsecase()
+	roastLevelUsecase := usecase.NewRoastLevelUsecase(roastLevelRepository)
 	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
 	varietyUsecase := usecase.NewVarietyUsecase(varietyRepository)
 

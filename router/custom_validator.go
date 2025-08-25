@@ -31,7 +31,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 			Message:   "Invalid request parameters",
 			Errors:    fieldErrors,
 			Content:   nil,
-			Timestamp: time.Now().In(common.Jst).Format(time.RFC3339),
+			TimeStamp: time.Now().In(common.Jst).Format(time.RFC3339),
 		}
 		return echo.NewHTTPError(http.StatusBadRequest, errorResponse)
 	}
