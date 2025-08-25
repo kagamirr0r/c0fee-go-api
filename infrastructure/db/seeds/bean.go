@@ -37,7 +37,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			AreaID:          common.ItoPoint(1),
 			Varieties:       []model.Variety{varieties[0]},
 			ProcessMethodID: common.ItoPoint(1),
-			RoastLevel:      model.Medium,
+			RoastLevelID:    1,
 			ImageKey:        common.StoPoint("1/image.png"),
 		},
 		{
@@ -50,7 +50,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			FarmerID:        common.ItoPoint(1),
 			Varieties:       []model.Variety{varieties[9]},
 			ProcessMethodID: common.ItoPoint(2),
-			RoastLevel:      model.Dark,
+			RoastLevelID:    2,
 			ImageKey:        common.StoPoint("2/image.png"),
 		},
 		{
@@ -63,7 +63,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			FarmerID:        common.ItoPoint(2),
 			Varieties:       []model.Variety{varieties[5], varieties[6]},
 			ProcessMethodID: common.ItoPoint(3),
-			RoastLevel:      model.Light,
+			RoastLevelID:    3,
 			ImageKey:        common.StoPoint("3/image.png"),
 		},
 		{
@@ -75,7 +75,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			FarmID:          common.ItoPoint(3),
 			Varieties:       []model.Variety{varieties[2]},
 			ProcessMethodID: common.ItoPoint(3),
-			RoastLevel:      model.MediumDark,
+			RoastLevelID:    4,
 			ImageKey:        common.StoPoint("4/image.png"),
 		},
 		{
@@ -87,7 +87,7 @@ func CreateBeanSeeds(db *gorm.DB) error {
 			FarmerID:        common.ItoPoint(4),
 			Varieties:       []model.Variety{varieties[7]},
 			ProcessMethodID: common.ItoPoint(5),
-			RoastLevel:      model.MediumLight,
+			RoastLevelID:    5,
 			ImageKey:        common.StoPoint("5/image.png"),
 		},
 	}

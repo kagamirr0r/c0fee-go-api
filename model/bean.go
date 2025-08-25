@@ -7,24 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type RoastLevelType string
-
-const (
-	Light       RoastLevelType = "Light"
-	MediumLight RoastLevelType = "Medium-Light"
-	Medium      RoastLevelType = "Medium"
-	MediumDark  RoastLevelType = "Medium-Dark"
-	Dark        RoastLevelType = "Dark"
-)
-
-var AllRoastLevels = []RoastLevelType{
-	Light,
-	MediumLight,
-	Medium,
-	MediumDark,
-	Dark,
-}
-
 type Currency string
 
 const (
@@ -61,11 +43,12 @@ type Bean struct {
 	ProcessMethodID *uint
 	ProcessMethod   *ProcessMethod `gorm:"foreignKey:ProcessMethodID"`
 	Name            *string
-	RoastLevel      RoastLevelType `gorm:"not null;default:Medium" validate:"required"`
-	Price           *uint          `gorm:"default:null"`
-	Currency        Currency       `gorm:"default:JPY"`
-	ImageKey        *string        `gorm:"default:null"`
-	BeanRatings     []BeanRating   `gorm:"hasMany:BeanRatings;foreignKey:BeanID"`
+	RoastLevelID    uint         `gorm:"not null;default:3" validate:"required"`
+	RoastLevel      RoastLevel   `gorm:"foreignKey:RoastLevelID"`
+	Price           *uint        `gorm:"default:null"`
+	Currency        Currency     `gorm:"default:JPY"`
+	ImageKey        *string      `gorm:"default:null"`
+	BeanRatings     []BeanRating `gorm:"hasMany:BeanRatings;foreignKey:BeanID"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
