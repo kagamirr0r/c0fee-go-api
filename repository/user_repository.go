@@ -14,28 +14,23 @@ var ErrDuplicateName = errors.New("duplicate name")
 
 // UserRepositoryのインターフェース
 type IUserRepository interface {
-	GetUserById(user *model.User, id uuid.UUID) error
+	GetById(user *model.User, id uuid.UUID) error
 	CreateUser(user *model.User) error
 }
 
 // UserRepositoryの構造体
-type UserRepository struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
-// UserRepositoryのコンストラクタ(ファクトリ)関数
-func NewUserRepository(db *gorm.DB) IUserRepository {
-	return &UserRepository{db}
-}
-
-func (ur *UserRepository) GetUserById(user *model.User, id uuid.UUID) error {
+func (ur *userRepository) GetById(user *model.User, id uuid.UUID) error {
 	if err := ur.db.Where("id = ?", id).First(user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ur *UserRepository) CreateUser(user *model.User) error {
+func (ur *userRepository) CreateUser(user *model.User) error {
 	var existUser model.User
 
 	// 重複確認, Firstでエラーがない場合は既にユーザーが存在する
@@ -53,4 +48,9 @@ func (ur *UserRepository) CreateUser(user *model.User) error {
 		return err
 	}
 	return nil
+}
+
+// UserRepositoryのコンストラクタ(ファクトリ)関数
+func NewUserRepository(db *gorm.DB) IUserRepository {
+	return &userRepository{db}
 }
