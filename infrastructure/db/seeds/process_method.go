@@ -11,7 +11,7 @@ func CreateProcessMethodSeeds(db *gorm.DB) error {
 		{ID: 1, Name: "Natural"},
 		{ID: 2, Name: "Anaerobic Natural"},
 		{ID: 3, Name: "Washed"},
-		{ID: 4, Name: "Smatra"},
+		{ID: 4, Name: "Sumatra"},
 		{ID: 5, Name: "Honey"},
 		{ID: 6, Name: "Wet-Hulled"},
 		{ID: 7, Name: "Pulped Natural"},
