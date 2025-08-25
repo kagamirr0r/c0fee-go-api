@@ -35,9 +35,7 @@ func (uc *userController) Create(c echo.Context) error {
 
 	resUser, err := uc.uu.Create(user)
 	if err != nil {
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
+		return c.JSON(http.StatusInternalServerError, err.Error())
 		// var fieldErrors []common.FieldError
 		// if errors.Is(err, repository.ErrDuplicateId) {
 		// 	fieldErrors = []common.FieldError{{Field: "id", Message: "ID already exists"}}
