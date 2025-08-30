@@ -107,7 +107,7 @@ func (bu *beanUsecase) Create(userID string, data dto.BeanInput, imageFile *mult
 	return bu.generateBeanOutput(&createdBean)
 }
 
-func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
+func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, newImageFile *multipart.FileHeader) (dto.BeanOutput, error) {
 
 	// Beanの存在確認と所有者チェック
 	var existingBean entity.Bean
@@ -119,32 +119,36 @@ func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, im
 	if existingBean.UserID.String() != userID {
 		return dto.BeanOutput{}, fmt.Errorf("access denied: you can only update your own beans")
 	}
+
 	// 既存のBeanを更新データで上書き
-	domainBeanToUpdate, varietyIDs := dto_entity.DtoBeanToEntity(userID, data)
-	domainBeanToUpdate.ID = existingBean.ID               // IDは既存のものを保持
-	domainBeanToUpdate.CreatedAt = existingBean.CreatedAt // 作成日時は保持
+	bean, varietyIDs := dto_entity.DtoBeanToEntity(userID, data)
+	bean.ID = existingBean.ID
+	bean.CreatedAt = existingBean.CreatedAt
 
 	// 既存の画像キーを保持（新しい画像がない場合）
-	if imageFile == nil {
-		domainBeanToUpdate.ImageKey = existingBean.ImageKey
+	if newImageFile == nil {
+		bean.ImageKey = existingBean.ImageKey
 	}
 
 	// 新しい画像をS3にアップロード（画像ファイルがある場合）
-	if imageFile != nil {
-		// 古い画像を削除（存在する場合）
+	if newImageFile != nil {
+
+		//　既存のimageがある場合は削除
 		if existingBean.ImageKey != nil {
-			// TODO: S3から古い画像を削除するメソッドを実装する場合は、ここで呼び出す
+			if err := bu.s3Service.RemoveBeanImage(*existingBean.ImageKey); err != nil {
+				return dto.BeanOutput{}, fmt.Errorf("failed to remove old image: %w", err)
+			}
 		}
 
-		imageKey, err := bu.s3Service.UploadBeanImage(beanID, imageFile)
+		imageKey, err := bu.s3Service.UploadBeanImage(beanID, newImageFile)
 		if err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
 		}
-		domainBeanToUpdate.ImageKey = &imageKey
+		bean.ImageKey = &imageKey
 	}
 
 	// Beanを更新
-	if err := bu.br.Update(&domainBeanToUpdate); err != nil {
+	if err := bu.br.Update(&bean); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to update bean: %w", err)
 	}
 
@@ -170,10 +174,10 @@ func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, im
 }
 
 func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error {
-	// ファイルサイズチェック（例：5MB制限）
-	maxSize := int64(5 * 1024 * 1024) // 5MB
+	// ファイルサイズチェック（例：10MB 制限）
+	maxSize := int64(10 * 1024 * 1024) // 10MB
 	if imageFile.Size > maxSize {
-		return errors.New("image file size must be less than 5MB")
+		return errors.New("image file size must be less than 10MB")
 	}
 
 	// ファイル拡張子チェック
