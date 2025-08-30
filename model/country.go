@@ -7,9 +7,9 @@ import (
 )
 
 type Country struct {
-	ID        uint   `param:"id" gorm:"primary_key;" validate:"required"`
-	Name      string `gorm:"unique" validate:"required"`
-	Code      string `gorm:"unique" validate:"required"`
+	ID        uint   `param:"id" gorm:"primary_key;"`
+	Name      string `gorm:"unique"`
+	Code      string `gorm:"unique"`
 	Areas     []Area `gorm:"foreignKey:CountryID"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

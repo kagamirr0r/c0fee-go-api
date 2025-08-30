@@ -8,8 +8,8 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `param:"id" gorm:"primary_key;type:uuid;" validate:"required"`
-	Name      string    `gorm:"unique" validate:"required"`
+	ID        uuid.UUID `param:"id" gorm:"primary_key;type:uuid;"`
+	Name      string    `gorm:"unique"`
 	AvatarKey string    `gorm:"default:null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
