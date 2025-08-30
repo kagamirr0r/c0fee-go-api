@@ -1,23 +1,23 @@
-package converter
+package dto_entity
 
 import (
+	"c0fee-api/domain/entity"
 	"c0fee-api/dto"
-	"c0fee-api/model"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-// DTO -> Model
-func ConvertBeanInputToBean(userID string, data dto.BeanInput) (model.Bean, []uint) {
-	bean := model.Bean{
+// DTO -> Entity
+func DtoBeanToEntity(userID string, data dto.BeanInput) (entity.Bean, []uint) {
+	bean := entity.Bean{
 		Name:         data.Name,
 		UserID:       uuid.MustParse(userID),
 		CountryID:    data.CountryID,
 		RoasterID:    data.RoasterID,
 		RoastLevelID: data.RoastLevelID,
 		Price:        data.Price,
-		Currency:     model.JPY, // デフォルト
+		Currency:     entity.JPY, // デフォルト
 	}
 
 	// Optional fields
@@ -40,8 +40,8 @@ func ConvertBeanInputToBean(userID string, data dto.BeanInput) (model.Bean, []ui
 	return bean, data.VarietyIDs
 }
 
-// Model -> DTO
-func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
+// Entity -> DTO
+func EntityBeanToDto(bean *entity.Bean, imageURL string) dto.BeanOutput {
 	response := dto.BeanOutput{
 		ID:        bean.ID,
 		Name:      bean.Name,
@@ -54,9 +54,16 @@ func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 	}
 
 	// User (IDは string)
-	response.User = dto.IdNameSummary{
-		ID:   bean.User.ID.String(),
-		Name: bean.User.Name,
+	if bean.User.ID.String() != "00000000-0000-0000-0000-000000000000" {
+		response.User = dto.IdNameSummary{
+			ID:   bean.User.ID.String(),
+			Name: bean.User.Name,
+		}
+	} else {
+		response.User = dto.IdNameSummary{
+			ID:   nil,
+			Name: "",
+		}
 	}
 
 	// Roaster, Country, RoastLevel etc. (IDは uint)
@@ -114,7 +121,7 @@ func ConvertBeanToOutput(bean *model.Bean, imageURL string) dto.BeanOutput {
 	return response
 }
 
-func ConvertBeanToBeanSummary(bean *model.Bean, imageURL string) dto.BeanSummary {
+func EntityBeanToBeanSummary(bean *entity.Bean, imageURL string) dto.BeanSummary {
 	response := dto.BeanSummary{
 		ID:        bean.ID,
 		Name:      bean.Name,
@@ -124,6 +131,11 @@ func ConvertBeanToBeanSummary(bean *model.Bean, imageURL string) dto.BeanSummary
 
 	if imageURL != "" {
 		response.ImageURL = &imageURL
+	}
+
+	response.User = dto.IdNameSummary{
+		ID:   bean.User.ID.String(),
+		Name: bean.User.Name,
 	}
 
 	// Roaster, Country, etc. (IDは uint)
