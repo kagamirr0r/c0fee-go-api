@@ -1,9 +1,9 @@
 package usecase
 
 import (
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
-	"c0fee-api/model"
-	"c0fee-api/repository"
 )
 
 type IProcessMethodUsecase interface {
@@ -11,11 +11,11 @@ type IProcessMethodUsecase interface {
 }
 
 type processMethodUsecase struct {
-	pmr repository.IProcessMethodRepository
+	pmr domainRepo.IProcessMethodRepository
 }
 
 func (pmu *processMethodUsecase) List() (dto.ProcessMethodsOutput, error) {
-	processMethods := []model.ProcessMethod{}
+	var processMethods []entity.ProcessMethod
 	err := pmu.pmr.List(&processMethods)
 	if err != nil {
 		return dto.ProcessMethodsOutput{}, err
@@ -32,6 +32,6 @@ func (pmu *processMethodUsecase) List() (dto.ProcessMethodsOutput, error) {
 	return dto.ProcessMethodsOutput{ProcessMethods: processMethodResponses, Count: uint(len(processMethods))}, nil
 }
 
-func NewProcessMethodUsecase(pmr repository.IProcessMethodRepository) IProcessMethodUsecase {
+func NewProcessMethodUsecase(pmr domainRepo.IProcessMethodRepository) IProcessMethodUsecase {
 	return &processMethodUsecase{pmr}
 }

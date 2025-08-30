@@ -1,4 +1,3 @@
-// infrastructure/s3/service.go
 package s3
 
 import (
@@ -14,11 +13,12 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
+// TODO: 以下はアプリケーションサービスのInterfaceとして切り出す
 type IS3Service interface {
-	GeneratePresignedURL(bucket, objectKey string, expiry time.Duration) (string, error)
 	GenerateBeanImageURL(imageKey string) (string, error)
 	GenerateUserAvatarURL(avatarKey string) (string, error)
 	GenerateRoasterImageURL(imageKey string) (string, error)
+	RemoveBeanImage(imageKey string) error
 	UploadBeanImage(beanID uint, imageFile *multipart.FileHeader) (string, error)
 }
 
@@ -26,16 +26,19 @@ type s3Service struct {
 	client *minio.Client
 }
 
-func (s *s3Service) GeneratePresignedURL(bucket, objectKey string, expiry time.Duration) (string, error) {
-	if objectKey == "" || objectKey == "null" {
+func (s *s3Service) generateImageURL(prefix, imageKey string) (string, error) {
+	if imageKey == "" || imageKey == "null" {
 		return "", nil
 	}
+
+	bucket := os.Getenv("S3_BUCKET")
+	objectKey := prefix + "/" + imageKey
 
 	presignedURL, err := s.client.PresignedGetObject(
 		context.Background(),
 		bucket,
 		objectKey,
-		expiry,
+		time.Hour*1,
 		nil,
 	)
 
@@ -55,18 +58,6 @@ func (s *s3Service) GenerateUserAvatarURL(avatarKey string) (string, error) {
 
 func (s *s3Service) GenerateRoasterImageURL(imageKey string) (string, error) {
 	return s.generateImageURL("roasters", imageKey)
-}
-
-// 共通の画像URL生成関数
-func (s *s3Service) generateImageURL(prefix, imageKey string) (string, error) {
-	if imageKey == "" || imageKey == "null" {
-		return "", nil
-	}
-
-	bucket := os.Getenv("S3_BUCKET")
-	objectKey := prefix + "/" + imageKey
-
-	return s.GeneratePresignedURL(bucket, objectKey, time.Hour*1)
 }
 
 func (s *s3Service) UploadBeanImage(beanID uint, imageFile *multipart.FileHeader) (string, error) {
@@ -108,7 +99,7 @@ func (s *s3Service) UploadBeanImage(beanID uint, imageFile *multipart.FileHeader
 		contentType = "application/octet-stream"
 	}
 
-	// S3互換ストレージにアップロード（MinIO/S3自動判定）
+	// アップロード
 	_, err = s.client.PutObject(
 		context.Background(),
 		bucket,
@@ -124,6 +115,28 @@ func (s *s3Service) UploadBeanImage(beanID uint, imageFile *multipart.FileHeader
 	}
 
 	return imageKey, nil
+}
+
+func (s *s3Service) RemoveBeanImage(imageKey string) error {
+	if imageKey == "" {
+		return fmt.Errorf("image key is required")
+	}
+
+	bucket := os.Getenv("S3_BUCKET")
+	if bucket == "" {
+		return fmt.Errorf("S3_BUCKET environment variable is not set")
+	}
+
+	objectKey := "beans/" + imageKey
+
+	err := s.client.RemoveObject(context.Background(), bucket, objectKey, minio.RemoveObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to remove image: %w", err)
+	}
+
+	fmt.Println("Removed Bean Image:", objectKey)
+
+	return nil
 }
 
 func NewS3Service() (IS3Service, error) {

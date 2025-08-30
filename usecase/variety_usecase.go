@@ -1,9 +1,9 @@
 package usecase
 
 import (
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
-	"c0fee-api/model"
-	"c0fee-api/repository"
 )
 
 type IVarietyUsecase interface {
@@ -11,11 +11,11 @@ type IVarietyUsecase interface {
 }
 
 type varietyUsecase struct {
-	vr repository.IVarietyRepository
+	vr domainRepo.IVarietyRepository
 }
 
 func (vu *varietyUsecase) List() (dto.VarietiesOutput, error) {
-	varieties := []model.Variety{}
+	var varieties []entity.Variety
 	err := vu.vr.List(&varieties)
 	if err != nil {
 		return dto.VarietiesOutput{}, err
@@ -32,6 +32,6 @@ func (vu *varietyUsecase) List() (dto.VarietiesOutput, error) {
 	return dto.VarietiesOutput{Varieties: varietyResponses, Count: uint(len(varieties))}, nil
 }
 
-func NewVarietyUsecase(vr repository.IVarietyRepository) IVarietyUsecase {
+func NewVarietyUsecase(vr domainRepo.IVarietyRepository) IVarietyUsecase {
 	return &varietyUsecase{vr}
 }

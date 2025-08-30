@@ -7,10 +7,10 @@ import (
 )
 
 type Roaster struct {
-	ID        uint    `param:"id" gorm:"primary_key;" validate:"required"`
-	Name      string  `gorm:"unique" validate:"required"`
-	Address   string  `validate:"required"`
-	WebURL    string  `validate:"required"`
+	ID        uint   `param:"id" gorm:"primary_key;"`
+	Name      string `gorm:"unique"`
+	Address   string
+	WebURL    string
 	Beans     []Bean  `gorm:"hasMany:Beans;foreignKey:RoasterID"`
 	ImageKey  *string `gorm:"default:null"`
 	CreatedAt time.Time

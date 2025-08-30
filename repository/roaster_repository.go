@@ -2,28 +2,30 @@ package repository
 
 import (
 	"c0fee-api/common"
+	"c0fee-api/common/converter/entity_model"
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
 )
 
-type IRoasterRepository interface {
-	List(countries *[]model.Roaster) error
-	Search(roasters *[]model.Roaster, params common.QueryParams) error
-}
-
 type roasterRepository struct {
 	db *gorm.DB
 }
 
-func (rr *roasterRepository) List(roasters *[]model.Roaster) error {
-	if err := rr.db.Find(roasters).Error; err != nil {
+func (rr *roasterRepository) List(domainRoasters *[]entity.Roaster) error {
+	var modelRoasters []model.Roaster
+	if err := rr.db.Find(&modelRoasters).Error; err != nil {
 		return err
 	}
+
+	// Convert model slice to domain entity slice
+	*domainRoasters = entity_model.ModelRoastersToEntities(modelRoasters)
 	return nil
 }
 
-func (rr *roasterRepository) Search(roasters *[]model.Roaster, params common.QueryParams) error {
+func (rr *roasterRepository) Search(domainRoasters *[]entity.Roaster, params common.QueryParams) error {
 	// 基本のクエリを初期化
 	query := rr.db
 
@@ -38,12 +40,16 @@ func (rr *roasterRepository) Search(roasters *[]model.Roaster, params common.Que
 	}
 
 	// 最終的なクエリを実行
-	if err := query.Find(roasters).Error; err != nil {
+	var modelRoasters []model.Roaster
+	if err := query.Find(&modelRoasters).Error; err != nil {
 		return err
 	}
+
+	// Convert model slice to domain entity slice
+	*domainRoasters = entity_model.ModelRoastersToEntities(modelRoasters)
 	return nil
 }
 
-func NewRoasterRepository(db *gorm.DB) IRoasterRepository {
+func NewRoasterRepository(db *gorm.DB) domainRepo.IRoasterRepository {
 	return &roasterRepository{db}
 }

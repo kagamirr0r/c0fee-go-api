@@ -7,8 +7,8 @@ import (
 )
 
 type Variety struct {
-	ID        uint   `param:"id" gorm:"primary_key;" validate:"required"`
-	Name      string `gorm:"unique" validate:"required"`
+	ID        uint   `param:"id" gorm:"primary_key;"`
+	Name      string `gorm:"unique"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

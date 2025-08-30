@@ -2,8 +2,8 @@ package controller
 
 import (
 	"c0fee-api/dto"
-	"c0fee-api/model"
 	"c0fee-api/usecase"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -31,8 +31,7 @@ func (bc *beanController) Read(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "Invalid ID format")
 	}
 
-	bean := model.Bean{ID: uint(idUint)}
-	resBean, err := bc.bu.Read(bean)
+	resBean, err := bc.bu.Read(uint(idUint))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -65,8 +64,23 @@ func (bc *beanController) Create(c echo.Context) error {
 	}
 	req.ImageFile = file
 
+	// JSONデータをパース
+	var data dto.BeanInput
+	if err := json.Unmarshal([]byte(req.Data), &data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("invalid JSON data: %v", err),
+		})
+	}
+
+	// Echo の Validation
+	if err := c.Validate(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("validation failed: %v", err),
+		})
+	}
+
 	// Beanを作成
-	bean, err := bc.bu.Create(userID, req.Data, req.ImageFile)
+	bean, err := bc.bu.Create(userID, data, req.ImageFile)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusBadRequest, map[string]string{
@@ -120,8 +134,23 @@ func (bc *beanController) Update(c echo.Context) error {
 	}
 	req.ImageFile = file
 
+	// JSONデータをパース
+	var data dto.BeanInput
+	if err := json.Unmarshal([]byte(req.Data), &data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("invalid JSON data: %v", err),
+		})
+	}
+
+	// Json Validation
+	if err := c.Validate(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("validation failed: %v", err),
+		})
+	}
+
 	// Beanを更新
-	bean, err := bc.bu.Update(uint(beanID), userID, req.Data, req.ImageFile)
+	bean, err := bc.bu.Update(uint(beanID), userID, data, req.ImageFile)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return c.JSON(http.StatusNotFound, map[string]string{

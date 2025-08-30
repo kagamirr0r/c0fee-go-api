@@ -2,10 +2,12 @@ package controller
 
 import (
 	"c0fee-api/common"
-	"c0fee-api/model"
+	"c0fee-api/dto"
 	"c0fee-api/usecase"
+	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,15 +27,20 @@ func NewUserController(uu usecase.IUserUsecase) IUserController {
 }
 
 func (uc *userController) Create(c echo.Context) error {
-	var user model.User
-	if err := c.Bind(&user); err != nil {
+	// json bodyからユーザー情報を取得
+	var userData dto.UserInput
+	if err := c.Bind(&userData); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
-	if err := c.Validate(user); err != nil {
-		return err
+
+	// Json Validation
+	if err := c.Validate(&userData); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("validation failed: %v", err),
+		})
 	}
 
-	resUser, err := uc.uu.Create(user)
+	resUser, err := uc.uu.Create(userData)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 		// var fieldErrors []common.FieldError
@@ -52,12 +59,13 @@ func (uc *userController) Create(c echo.Context) error {
 }
 
 func (uc *userController) Read(c echo.Context) error {
-	var user model.User
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+	userID := c.Param("id")
+	parsedUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid User ID format")
 	}
 
-	resUser, err := uc.uu.Read(user)
+	resUser, err := uc.uu.Read(parsedUUID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
@@ -71,12 +79,13 @@ func (uc *userController) ListUserBeans(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	var user model.User
-	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
+	userID := c.Param("id")
+	parsedUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid User ID format")
 	}
 
-	resBeans, err := uc.uu.GetUserBeans(user, params)
+	resBeans, err := uc.uu.GetUserBeans(parsedUUID, params)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}

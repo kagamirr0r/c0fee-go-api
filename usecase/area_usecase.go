@@ -1,9 +1,9 @@
 package usecase
 
 import (
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
-	"c0fee-api/model"
-	"c0fee-api/repository"
 )
 
 type IAreaUsecase interface {
@@ -11,11 +11,11 @@ type IAreaUsecase interface {
 }
 
 type areaUsecase struct {
-	ar repository.IAreaRepository
+	ar domainRepo.IAreaRepository
 }
 
 func (au *areaUsecase) Read(id uint) (dto.AreaOutput, error) {
-	storedArea := model.Area{}
+	var storedArea entity.Area
 	if err := au.ar.GetById(&storedArea, id); err != nil {
 		return dto.AreaOutput{}, err
 	}
@@ -23,7 +23,7 @@ func (au *areaUsecase) Read(id uint) (dto.AreaOutput, error) {
 	return au.convertToAreaResponse(&storedArea), nil
 }
 
-func (au *areaUsecase) convertToAreaResponse(area *model.Area) dto.AreaOutput {
+func (au *areaUsecase) convertToAreaResponse(area *entity.Area) dto.AreaOutput {
 	farms := make([]dto.FarmListOutput, len(area.Farms))
 	for i, farm := range area.Farms {
 		farms[i] = dto.FarmListOutput{
@@ -39,6 +39,6 @@ func (au *areaUsecase) convertToAreaResponse(area *model.Area) dto.AreaOutput {
 	}
 }
 
-func NewAreaUsecase(ar repository.IAreaRepository) IAreaUsecase {
+func NewAreaUsecase(ar domainRepo.IAreaRepository) IAreaUsecase {
 	return &areaUsecase{ar}
 }

@@ -2,26 +2,21 @@ package repository
 
 import (
 	"c0fee-api/common"
+	"c0fee-api/common/converter/entity_model"
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/model"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type IBeanRepository interface {
-	GetById(bean *model.Bean, id uint) error
-	GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error
-	SearchBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error
-	Create(bean *model.Bean) error
-	Update(bean *model.Bean) error
-	SetVarieties(beanID uint, varietyIDs []uint) error
-}
-
 type beanRepository struct {
 	db *gorm.DB
 }
 
-func (br *beanRepository) GetById(bean *model.Bean, id uint) error {
+func (br *beanRepository) GetById(domainBean *entity.Bean, id uint) error {
+	var modelBean model.Bean
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -35,18 +30,23 @@ func (br *beanRepository) GetById(bean *model.Bean, id uint) error {
 		Preload("BeanRatings").
 		Preload("BeanRatings.User").
 		Where("id = ?", id).
-		First(bean).Error; err != nil {
+		First(&modelBean).Error; err != nil {
 		return err
 	}
+
+	// Convert model to domain entity
+	entityBean := entity_model.ModelBeanToEntity(&modelBean)
+	*domainBean = *entityBean
 	return nil
 }
 
-func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error {
+func (br *beanRepository) GetBeansByUserId(domainBeans *[]entity.Bean, userID uuid.UUID, params common.QueryParams) error {
 	limit := 10 // デフォルトの取得件数
 	if params.Limit > 0 {
 		limit = params.Limit
 	}
 
+	var modelBeans []model.Bean
 	if err := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -60,13 +60,16 @@ func (br *beanRepository) GetBeansByUserId(beans *[]model.Bean, userID uuid.UUID
 		Where("user_id = ?", userID).
 		Limit(limit).
 		Order("created_at desc").
-		Find(beans).Error; err != nil {
+		Find(&modelBeans).Error; err != nil {
 		return err
 	}
+
+	// Convert model slice to domain entity slice
+	*domainBeans = entity_model.ModelBeansToEntities(modelBeans)
 	return nil
 }
 
-func (br *beanRepository) SearchBeansByUserId(beans *[]model.Bean, userID uuid.UUID, params common.QueryParams) error {
+func (br *beanRepository) SearchBeansByUserId(domainBeans *[]entity.Bean, userID uuid.UUID, params common.QueryParams) error {
 	query := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -108,23 +111,39 @@ func (br *beanRepository) SearchBeansByUserId(beans *[]model.Bean, userID uuid.U
 	query = query.Order("beans.id desc")
 
 	// 実行
-	if err := query.Find(beans).Error; err != nil {
+	var modelBeans []model.Bean
+	if err := query.Find(&modelBeans).Error; err != nil {
 		return err
 	}
+
+	// Convert model slice to domain entity slice
+	*domainBeans = entity_model.ModelBeansToEntities(modelBeans)
 	return nil
 }
 
-func (br *beanRepository) Create(bean *model.Bean) error {
-	if err := br.db.Create(bean).Error; err != nil {
+func (br *beanRepository) Create(domainBean *entity.Bean) error {
+	modelBean := entity_model.EntityBeanToModel(domainBean)
+	if err := br.db.Create(modelBean).Error; err != nil {
 		return err
 	}
+
+	// Update domain entity with database-generated fields
+	domainBean.ID = modelBean.ID
+	domainBean.CreatedAt = modelBean.CreatedAt
+	domainBean.UpdatedAt = modelBean.UpdatedAt
+
 	return nil
 }
 
-func (br *beanRepository) Update(bean *model.Bean) error {
-	if err := br.db.Save(bean).Error; err != nil {
+func (br *beanRepository) Update(domainBean *entity.Bean) error {
+	modelBean := entity_model.EntityBeanToModel(domainBean)
+	if err := br.db.Save(modelBean).Error; err != nil {
 		return err
 	}
+
+	// Update domain entity with database fields
+	domainBean.UpdatedAt = modelBean.UpdatedAt
+
 	return nil
 }
 
@@ -154,6 +173,6 @@ func (br *beanRepository) SetVarieties(beanID uint, varietyIDs []uint) error {
 	return nil
 }
 
-func NewBeanRepository(db *gorm.DB) IBeanRepository {
+func NewBeanRepository(db *gorm.DB) domainRepo.IBeanRepository {
 	return &beanRepository{db}
 }

@@ -2,10 +2,10 @@ package usecase
 
 import (
 	"c0fee-api/common"
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
-	"c0fee-api/model"
-	"c0fee-api/repository"
 )
 
 type IRoasterUsecase interface {
@@ -13,12 +13,12 @@ type IRoasterUsecase interface {
 }
 
 type roasterUsecase struct {
-	rr        repository.IRoasterRepository
+	rr        domainRepo.IRoasterRepository
 	s3Service s3.IS3Service
 }
 
 func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, error) {
-	roasters := []model.Roaster{}
+	var roasters []entity.Roaster
 
 	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
 	if params.NameLike != "" || params.Limit > 0 {
@@ -55,6 +55,6 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 	return dto.RoastersOutput{Roasters: roastersResponse, Count: uint(len(roasters))}, nil
 }
 
-func NewRoasterUsecase(rr repository.IRoasterRepository, s3Service s3.IS3Service) IRoasterUsecase {
+func NewRoasterUsecase(rr domainRepo.IRoasterRepository, s3Service s3.IS3Service) IRoasterUsecase {
 	return &roasterUsecase{rr, s3Service}
 }

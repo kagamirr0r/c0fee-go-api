@@ -7,9 +7,9 @@ import (
 )
 
 type RoastLevel struct {
-	ID        uint   `gorm:"primary_key;" validate:"required"`
-	Name      string `gorm:"not null;unique" validate:"required"`
-	Level     int    `gorm:"not null;unique" validate:"required,min=1,max=10"`
+	ID        uint   `gorm:"primary_key;"`
+	Name      string `gorm:"not null;unique"`
+	Level     int    `gorm:"not null;unique"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`

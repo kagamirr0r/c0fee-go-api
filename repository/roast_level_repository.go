@@ -1,34 +1,41 @@
 package repository
 
 import (
+	"c0fee-api/common/converter/entity_model"
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
 )
 
-type IRoastLevelRepository interface {
-	GetAll(roastLevels *[]model.RoastLevel) error
-	GetById(roastLevel *model.RoastLevel, id uint) error
-}
-
 type roastLevelRepository struct {
 	db *gorm.DB
 }
 
-func (rlr *roastLevelRepository) GetAll(roastLevels *[]model.RoastLevel) error {
-	if err := rlr.db.Order("level ASC").Find(roastLevels).Error; err != nil {
+func (rlr *roastLevelRepository) GetAll(domainRoastLevels *[]entity.RoastLevel) error {
+	var modelRoastLevels []model.RoastLevel
+	if err := rlr.db.Order("level ASC").Find(&modelRoastLevels).Error; err != nil {
 		return err
 	}
+
+	// Convert model slice to domain entity slice
+	*domainRoastLevels = entity_model.ModelRoastLevelsToEntities(modelRoastLevels)
 	return nil
 }
 
-func (rlr *roastLevelRepository) GetById(roastLevel *model.RoastLevel, id uint) error {
-	if err := rlr.db.First(roastLevel, id).Error; err != nil {
+func (rlr *roastLevelRepository) GetById(domainRoastLevel *entity.RoastLevel, id uint) error {
+	var modelRoastLevel model.RoastLevel
+	if err := rlr.db.First(&modelRoastLevel, id).Error; err != nil {
 		return err
 	}
+
+	// Convert model to domain entity
+	entityRoastLevel := entity_model.ModelRoastLevelToEntity(&modelRoastLevel)
+	*domainRoastLevel = *entityRoastLevel
 	return nil
 }
 
-func NewRoastLevelRepository(db *gorm.DB) IRoastLevelRepository {
+func NewRoastLevelRepository(db *gorm.DB) domainRepo.IRoastLevelRepository {
 	return &roastLevelRepository{db}
 }

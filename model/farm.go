@@ -7,9 +7,9 @@ import (
 )
 
 type Farm struct {
-	ID        uint   `param:"id" gorm:"primary_key;" validate:"required"`
-	Name      string `gorm:"not null" validate:"required"`
-	AreaID    uint   `gorm:"not null" validate:"required"`
+	ID        uint   `param:"id" gorm:"primary_key;"`
+	Name      string `gorm:"not null"`
+	AreaID    uint   `gorm:"not null"`
 	Area      Area
 	Farmers   []Farmer `gorm:"foreignKey:FarmID"`
 	CreatedAt time.Time
