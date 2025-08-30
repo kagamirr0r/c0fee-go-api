@@ -1,12 +1,11 @@
 package usecase
 
 import (
-	"c0fee-api/common/converter"
+	"c0fee-api/common/converter/dto_entity"
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
-	"c0fee-api/model"
-	"c0fee-api/repository"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"mime/multipart"
@@ -14,91 +13,93 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-playground/validator"
 	"github.com/google/uuid"
 )
 
 type IBeanUsecase interface {
-	Read(bean model.Bean) (dto.BeanOutput, error)
-	Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
-	Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
+	Read(beanID uint) (dto.BeanOutput, error)
+	Create(userID string, data dto.BeanInput, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
+	Update(beanID uint, userID string, data dto.BeanInput, imageFile *multipart.FileHeader) (dto.BeanOutput, error)
 }
 
 type beanUsecase struct {
-	ur        repository.IUserRepository
-	br        repository.IBeanRepository
-	brr       repository.IBeanRatingRepository
+	ur        domainRepo.IUserRepository
+	br        domainRepo.IBeanRepository
+	brr       domainRepo.IBeanRatingRepository
 	s3Service s3.IS3Service
-	validator *validator.Validate
 }
 
-func (bu *beanUsecase) Read(bean model.Bean) (dto.BeanOutput, error) {
-	storedBean := model.Bean{}
-	if err := bu.br.GetById(&storedBean, bean.ID); err != nil {
+func (bu *beanUsecase) Read(beanID uint) (dto.BeanOutput, error) {
+	var domainBean entity.Bean
+	if err := bu.br.GetById(&domainBean, beanID); err != nil {
 		return dto.BeanOutput{}, err
 	}
 
 	var imageURL string
-	if storedBean.ImageKey != nil {
-		url, err := bu.s3Service.GenerateBeanImageURL(*storedBean.ImageKey)
+	if domainBean.ImageKey != nil {
+		url, err := bu.s3Service.GenerateBeanImageURL(*domainBean.ImageKey)
 		if err != nil {
 			return dto.BeanOutput{}, err
 		}
 		imageURL = url
 	}
 
-	return converter.ConvertBeanToOutput(&storedBean, imageURL), nil
+	// Convert domain entity directly to DTO
+	return dto_entity.EntityBeanToDto(&domainBean, imageURL), nil
 }
 
-func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
+func (bu *beanUsecase) Create(userID string, data dto.BeanInput, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
 	// 共通バリデーション
-	data, err := bu.validateInputData(userID, dataJSON, imageFile)
+	err := bu.validateInputData(userID, imageFile)
 	if err != nil {
 		return dto.BeanOutput{}, err
 	}
 
-	// Beanエンティティを作成
-	bean, varietyIDs := converter.ConvertBeanInputToBean(userID, data)
+	// Domain Beanエンティティを作成
+	domainBean, varietyIDs := dto_entity.DtoBeanToEntity(userID, data)
+
 	// 最初にBeanを保存（画像なしで）
-	if err := bu.br.Create(&bean); err != nil {
+	if err := bu.br.Create(&domainBean); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to create bean: %w", err)
 	}
 
 	// 品種の関連付け
 	if len(varietyIDs) > 0 {
-		if err := bu.br.SetVarieties(bean.ID, varietyIDs); err != nil {
+		if err := bu.br.SetVarieties(domainBean.ID, varietyIDs); err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to set varieties: %w", err)
 		}
 	}
 
 	// 画像をS3にアップロード（画像ファイルがある場合のみ）
 	if imageFile != nil {
-		imageKey, err := bu.s3Service.UploadBeanImage(bean.ID, imageFile)
+		imageKey, err := bu.s3Service.UploadBeanImage(domainBean.ID, imageFile)
 		if err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
 		}
-		bean.ImageKey = &imageKey
+
+		// 画像キーのみを更新（domainBeanの他のフィールドはそのまま保持）
+		domainBean.ImageKey = &imageKey
 
 		// 画像キーを更新
-		if err := bu.br.Update(&bean); err != nil {
+		if err := bu.br.Update(&domainBean); err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to update bean with image key: %w", err)
 		}
 	}
 
 	// 作成されたBeanを取得（関連データ含む）
-	var createdBean model.Bean
-	if err := bu.br.GetById(&createdBean, bean.ID); err != nil {
+	var createdBean entity.Bean
+	if err := bu.br.GetById(&createdBean, domainBean.ID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to get created bean: %w", err)
 	}
 
 	// BeanRatingがある場合は作成
 	if data.BeanRating != nil {
-		if err := bu.createBeanRating(bean.ID, userID, data.BeanRating); err != nil {
+		if err := bu.createBeanRating(domainBean.ID, userID, data.BeanRating); err != nil {
 			return dto.BeanOutput{}, err
 		}
 
 		// BeanRatingを含めて再取得
-		if err := bu.br.GetById(&createdBean, bean.ID); err != nil {
+		if err := bu.br.GetById(&createdBean, domainBean.ID); err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to get created bean with rating: %w", err)
 		}
 	}
@@ -106,15 +107,10 @@ func (bu *beanUsecase) Create(userID string, dataJSON string, imageFile *multipa
 	return bu.generateBeanOutput(&createdBean)
 }
 
-func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
-	// 共通バリデーション
-	data, err := bu.validateInputData(userID, dataJSON, imageFile)
-	if err != nil {
-		return dto.BeanOutput{}, err
-	}
+func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, imageFile *multipart.FileHeader) (dto.BeanOutput, error) {
 
 	// Beanの存在確認と所有者チェック
-	var existingBean model.Bean
+	var existingBean entity.Bean
 	if err := bu.br.GetById(&existingBean, beanID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("bean not found: %w", err)
 	}
@@ -124,12 +120,13 @@ func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, image
 		return dto.BeanOutput{}, fmt.Errorf("access denied: you can only update your own beans")
 	}
 	// 既存のBeanを更新データで上書き
-	beanToUpdate, varietyIDs := converter.ConvertBeanInputToBean(userID, data) // IDは変更しない
-	beanToUpdate.CreatedAt = existingBean.CreatedAt                            // 作成日時は保持
+	domainBeanToUpdate, varietyIDs := dto_entity.DtoBeanToEntity(userID, data)
+	domainBeanToUpdate.ID = existingBean.ID               // IDは既存のものを保持
+	domainBeanToUpdate.CreatedAt = existingBean.CreatedAt // 作成日時は保持
 
 	// 既存の画像キーを保持（新しい画像がない場合）
 	if imageFile == nil {
-		beanToUpdate.ImageKey = existingBean.ImageKey
+		domainBeanToUpdate.ImageKey = existingBean.ImageKey
 	}
 
 	// 新しい画像をS3にアップロード（画像ファイルがある場合）
@@ -143,11 +140,11 @@ func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, image
 		if err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to upload image: %w", err)
 		}
-		beanToUpdate.ImageKey = &imageKey
+		domainBeanToUpdate.ImageKey = &imageKey
 	}
 
 	// Beanを更新
-	if err := bu.br.Update(&beanToUpdate); err != nil {
+	if err := bu.br.Update(&domainBeanToUpdate); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to update bean: %w", err)
 	}
 
@@ -164,7 +161,7 @@ func (bu *beanUsecase) Update(beanID uint, userID string, dataJSON string, image
 	}
 
 	// 更新されたBeanを取得（関連データ含む）
-	var updatedBean model.Bean
+	var updatedBean entity.Bean
 	if err := bu.br.GetById(&updatedBean, beanID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to get updated bean: %w", err)
 	}
@@ -191,37 +188,26 @@ func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error 
 }
 
 // validateInputData は共通のバリデーション処理を実行します
-func (bu *beanUsecase) validateInputData(userID string, dataJSON string, imageFile *multipart.FileHeader) (dto.BeanInput, error) {
+func (bu *beanUsecase) validateInputData(userID string, imageFile *multipart.FileHeader) error {
 	// ユーザーの存在確認
-	var user model.User
+	var user entity.User
 	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
-		return dto.BeanInput{}, fmt.Errorf("user not found: %w", err)
-	}
-
-	// JSONデータをパース
-	var data dto.BeanInput
-	if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
-		return dto.BeanInput{}, fmt.Errorf("invalid JSON data: %w", err)
-	}
-
-	// validatorを使用してJsonデータをバリデーション
-	if err := bu.validator.Struct(data); err != nil {
-		return dto.BeanInput{}, fmt.Errorf("validation failed: %w", err)
+		return fmt.Errorf("user not found: %w", err)
 	}
 
 	// 画像ファイルのバリデーション（ファイルがある場合のみ）
 	if imageFile != nil {
 		if err := bu.validateImageFile(imageFile); err != nil {
-			return dto.BeanInput{}, err
+			return fmt.Errorf("invalid image file: %w", err)
 		}
 	}
 
-	return data, nil
+	return nil
 }
 
 // createBeanRating は新しいBeanRatingを作成します
 func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
-	beanRating := model.BeanRating{
+	beanRating := entity.BeanRating{
 		BeanID:     beanID,
 		UserID:     uuid.MustParse(userID),
 		Bitterness: ratingData.Bitterness,
@@ -244,7 +230,7 @@ func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *
 func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
 	if ratingData.ID != nil {
 		// IDがある場合は更新
-		beanRating := model.BeanRating{
+		beanRating := entity.BeanRating{
 			ID:         uint(*ratingData.ID),
 			BeanID:     beanID,
 			UserID:     uuid.MustParse(userID),
@@ -271,25 +257,25 @@ func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *
 }
 
 // generateBeanOutput は画像URLを生成してBeanOutputを作成します
-func (bu *beanUsecase) generateBeanOutput(bean *model.Bean) (dto.BeanOutput, error) {
+func (bu *beanUsecase) generateBeanOutput(domainBean *entity.Bean) (dto.BeanOutput, error) {
 	var imageURL string
-	if bean.ImageKey != nil {
-		url, err := bu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
+	if domainBean.ImageKey != nil {
+		url, err := bu.s3Service.GenerateBeanImageURL(*domainBean.ImageKey)
 		if err != nil {
 			return dto.BeanOutput{}, fmt.Errorf("failed to generate image URL: %w", err)
 		}
 		imageURL = url
 	}
 
-	return converter.ConvertBeanToOutput(bean, imageURL), nil
+	// Convert domain entity directly to DTO
+	return dto_entity.EntityBeanToDto(domainBean, imageURL), nil
 }
 
-func NewBeanUsecase(ur repository.IUserRepository, br repository.IBeanRepository, brr repository.IBeanRatingRepository, s3Service s3.IS3Service, v *validator.Validate) IBeanUsecase {
+func NewBeanUsecase(ur domainRepo.IUserRepository, br domainRepo.IBeanRepository, brr domainRepo.IBeanRatingRepository, s3Service s3.IS3Service) IBeanUsecase {
 	return &beanUsecase{
 		ur:        ur,
 		br:        br,
 		brr:       brr,
 		s3Service: s3Service,
-		validator: v,
 	}
 }
