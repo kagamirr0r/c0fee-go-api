@@ -14,6 +14,7 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
+// TODO: 以下はアプリケーションサービスのInterfaceとして切り出す
 type IS3Service interface {
 	GeneratePresignedURL(bucket, objectKey string, expiry time.Duration) (string, error)
 	GenerateBeanImageURL(imageKey string) (string, error)
