@@ -26,12 +26,12 @@ var AllCurrencies = []Currency{
 }
 
 type Bean struct {
-	ID              uint      `param:"id" gorm:"primary_key;" validate:"required"`
-	UserID          uuid.UUID `gorm:"type:uuid;not null" validate:"required"`
+	ID              uint      `param:"id" gorm:"primary_key;"`
+	UserID          uuid.UUID `gorm:"type:uuid;not null"`
 	User            User
-	RoasterID       uint `gorm:"not null" validate:"required"`
+	RoasterID       uint `gorm:"not null"`
 	Roaster         Roaster
-	CountryID       uint `gorm:"not null" validate:"required"`
+	CountryID       uint `gorm:"not null"`
 	Country         Country
 	AreaID          *uint
 	Area            *Area `gorm:"foreignKey:AreaID"`
@@ -43,7 +43,7 @@ type Bean struct {
 	ProcessMethodID *uint
 	ProcessMethod   *ProcessMethod `gorm:"foreignKey:ProcessMethodID"`
 	Name            *string
-	RoastLevelID    uint         `gorm:"not null;default:3" validate:"required"`
+	RoastLevelID    uint         `gorm:"not null;default:3"`
 	RoastLevel      RoastLevel   `gorm:"foreignKey:RoastLevelID"`
 	Price           *uint        `gorm:"default:null"`
 	Currency        Currency     `gorm:"default:JPY"`

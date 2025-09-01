@@ -8,8 +8,6 @@ import (
 	"c0fee-api/router"
 	"c0fee-api/usecase"
 	"log"
-
-	"github.com/go-playground/validator"
 )
 
 func main() {
@@ -32,12 +30,9 @@ func main() {
 	userRepository := repository.NewUserRepository(db)
 	varietyRepository := repository.NewVarietyRepository(db)
 
-	// validator
-	validator := validator.New()
-
 	// usecases
 	areaUsecase := usecase.NewAreaUsecase(areaRepository)
-	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, beanRatingRepository, s3Service, validator)
+	beanUseCase := usecase.NewBeanUsecase(userRepository, beanRepository, beanRatingRepository, s3Service)
 	countryUsecase := usecase.NewCountryUsecase(countryRepository)
 	farmUsecase := usecase.NewFarmUsecase(farmRepository)
 	processMethodUsecase := usecase.NewProcessMethodUsecase(processMethodRepository)

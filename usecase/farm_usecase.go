@@ -1,9 +1,9 @@
 package usecase
 
 import (
+	"c0fee-api/domain/entity"
+	domainRepo "c0fee-api/domain/repository"
 	"c0fee-api/dto"
-	"c0fee-api/model"
-	"c0fee-api/repository"
 )
 
 type IFarmUsecase interface {
@@ -11,19 +11,19 @@ type IFarmUsecase interface {
 }
 
 type farmUsecase struct {
-	ar repository.IFarmRepository
+	ar domainRepo.IFarmRepository
 }
 
-func (au *farmUsecase) Read(id uint) (dto.FarmOutput, error) {
-	storedFarm := model.Farm{}
-	if err := au.ar.GetById(&storedFarm, id); err != nil {
+func (fu *farmUsecase) Read(id uint) (dto.FarmOutput, error) {
+	var storedFarm entity.Farm
+	if err := fu.ar.GetById(&storedFarm, id); err != nil {
 		return dto.FarmOutput{}, err
 	}
 
-	return au.convertToFarmResponse(&storedFarm), nil
+	return fu.convertToFarmResponse(&storedFarm), nil
 }
 
-func (au *farmUsecase) convertToFarmResponse(farm *model.Farm) dto.FarmOutput {
+func (fu *farmUsecase) convertToFarmResponse(farm *entity.Farm) dto.FarmOutput {
 	farmers := make([]dto.FarmerListOutput, len(farm.Farmers))
 	for i, farmer := range farm.Farmers {
 		farmers[i] = dto.FarmerListOutput{
@@ -39,6 +39,6 @@ func (au *farmUsecase) convertToFarmResponse(farm *model.Farm) dto.FarmOutput {
 	}
 }
 
-func NewFarmUsecase(ar repository.IFarmRepository) IFarmUsecase {
+func NewFarmUsecase(ar domainRepo.IFarmRepository) IFarmUsecase {
 	return &farmUsecase{ar}
 }
