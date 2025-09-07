@@ -34,6 +34,7 @@ func ModelRoasterToEntity(modelRoaster *model.Roaster) *entity.Roaster {
 		Address:   modelRoaster.Address,
 		WebURL:    modelRoaster.WebURL,
 		ImageKey:  modelRoaster.ImageKey,
+		Beans:     ModelBeansToEntities(modelRoaster.Beans),
 		CreatedAt: modelRoaster.CreatedAt,
 		UpdatedAt: modelRoaster.UpdatedAt,
 	}

@@ -70,35 +70,8 @@ func (uu *userUsecase) GetUserBeans(userID uuid.UUID, params common.QueryParams)
 		}
 	}
 
-	userBeans := make([]dto.BeanSummary, len(domainBeans))
-	for i, bean := range domainBeans {
-		var imageURL string
-		if bean.ImageKey != nil {
-			url, err := uu.s3Service.GenerateBeanImageURL(*bean.ImageKey)
-			if err != nil {
-				return dto.BeansOutput{}, err
-			}
-			imageURL = url
-		}
-		// Convert domain entity to model for existing converter function
-		userBeans[i] = dto_entity.EntityBeanToBeanSummary(&bean, imageURL)
-	}
-
-	// カーソルページネーション用の情報を生成
-	var nextCursor *uint
-	if len(domainBeans) > 0 && params.Limit > 0 && len(domainBeans) == params.Limit {
-		// 最後のBeanのIDをnext_cursorとして設定
-		lastBeanID := domainBeans[len(domainBeans)-1].ID
-		nextCursor = &lastBeanID
-	}
-
-	beansResponse := dto.BeansOutput{
-		Beans:      userBeans,
-		Count:      uint(len(domainBeans)),
-		NextCursor: nextCursor,
-	}
-
-	return beansResponse, nil
+	// Use new converter function
+	return dto_entity.BeanEntitiesToBeansOutput(domainBeans, params, uu.s3Service)
 }
 
 func NewUserUsecase(ur domainRepo.IUserRepository, br domainRepo.IBeanRepository, s3Service s3.IS3Service) IUserUsecase {
