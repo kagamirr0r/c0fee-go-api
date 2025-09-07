@@ -4,12 +4,14 @@ import (
 	"c0fee-api/common"
 	"c0fee-api/usecase"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
 
 type IRoasterController interface {
 	List(c echo.Context) error
+	Read(c echo.Context) error
 }
 
 type roasterController struct {
@@ -29,6 +31,21 @@ func (rc *roasterController) List(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resCountries)
+}
+
+func (rc *roasterController) Read(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Invalid ID format")
+	}
+
+	roaster, err := rc.ru.GetById(uint(id))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, roaster)
 }
 
 func NewRoasterController(bu usecase.IRoasterUsecase) IRoasterController {
