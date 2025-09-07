@@ -45,8 +45,32 @@ func (rr *roasterRepository) Search(domainRoasters *[]entity.Roaster, params com
 		return err
 	}
 
-	// Convert model slice to domain entity slice
 	*domainRoasters = entity_model.ModelRoastersToEntities(modelRoasters)
+	return nil
+}
+
+func (rr *roasterRepository) GetById(domainRoaster *entity.Roaster, id uint) error {
+	var modelRoaster model.Roaster
+	if err := rr.db.
+		Preload("Beans").
+		Preload("Beans.User").
+		Preload("Beans.Roaster").
+		Preload("Beans.Country").
+		Preload("Beans.Area").
+		Preload("Beans.Farm").
+		Preload("Beans.Farmer").
+		Preload("Beans.RoastLevel").
+		Preload("Beans.ProcessMethod").
+		Preload("Beans.Varieties").
+		Preload("Beans.BeanRatings").
+		Preload("Beans.BeanRatings.User").
+		Where("id = ?", id).
+		First(&modelRoaster).
+		Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelRoasterToEntity(&modelRoaster)
 	return nil
 }
 
