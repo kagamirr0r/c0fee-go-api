@@ -8,4 +8,5 @@ import (
 type IRoasterRepository interface {
 	List(roasters *[]entity.Roaster) error
 	Search(roasters *[]entity.Roaster, params common.QueryParams) error
+	GetById(roaster *entity.Roaster, id uint) error
 }

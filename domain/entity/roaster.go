@@ -8,6 +8,7 @@ type Roaster struct {
 	Address   string
 	WebURL    string
 	ImageKey  *string
+	Beans     []Bean
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
