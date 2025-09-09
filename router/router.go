@@ -59,6 +59,7 @@ func defineRoutes(e *echo.Echo, uc controller.IUserController, bc controller.IBe
 	e.GET("/countries", cc.List)
 	e.GET("/countries/:id", cc.Read)
 	e.GET("/roasters", rc.List)
+	e.POST("/roasters", rc.Create)
 	e.GET("/roasters/:id", rc.Read)
 	e.GET("/areas/:id", ac.Read)
 	e.GET("/farms/:id", fc.Read)

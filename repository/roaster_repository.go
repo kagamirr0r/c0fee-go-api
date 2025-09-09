@@ -74,6 +74,28 @@ func (rr *roasterRepository) GetById(domainRoaster *entity.Roaster, id uint) err
 	return nil
 }
 
+func (rr *roasterRepository) Create(domainRoaster *entity.Roaster) error {
+	modelRoaster := entity_model.EntityRoasterToModel(domainRoaster)
+
+	if err := rr.db.Create(modelRoaster).Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelRoasterToEntity(modelRoaster)
+	return nil
+}
+
+func (rr *roasterRepository) Update(domainRoaster *entity.Roaster) error {
+	modelRoaster := entity_model.EntityRoasterToModel(domainRoaster)
+
+	if err := rr.db.Save(modelRoaster).Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelRoasterToEntity(modelRoaster)
+	return nil
+}
+
 func NewRoasterRepository(db *gorm.DB) domainRepo.IRoasterRepository {
 	return &roasterRepository{db}
 }
