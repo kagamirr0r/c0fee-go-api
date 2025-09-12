@@ -2,8 +2,7 @@ package repository
 
 import (
 	"c0fee-api/common/converter/entity_model"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/user"
 	"c0fee-api/model"
 	"errors"
 
@@ -15,25 +14,24 @@ var ErrDuplicateUser = errors.New("duplicate user")
 var ErrDuplicateId = errors.New("duplicate id")
 var ErrDuplicateName = errors.New("duplicate name")
 
-
 // UserRepositoryの構造体
 type userRepository struct {
 	db *gorm.DB
 }
 
-func (ur *userRepository) GetById(user *entity.User, id uuid.UUID) error {
+func (ur *userRepository) GetById(user *user.Entity, id uuid.UUID) error {
 	var modelUser model.User
 	if err := ur.db.Where("id = ?", id).First(&modelUser).Error; err != nil {
 		return err
 	}
-	
+
 	// Use converter to convert model.User to entity.User
-	entityUser := entity_model.ModelUserToEntity(&modelUser)
+	entityUser := entity_model.ModelToUserEntity(&modelUser)
 	*user = *entityUser
 	return nil
 }
 
-func (ur *userRepository) CreateUser(user *entity.User) error {
+func (ur *userRepository) CreateUser(user *user.Entity) error {
 	var existUser model.User
 
 	// 重複確認, Firstでエラーがない場合は既にユーザーが存在する
@@ -48,20 +46,20 @@ func (ur *userRepository) CreateUser(user *entity.User) error {
 	}
 
 	// Use converter to convert entity.User to model.User for database operations
-	modelUser := entity_model.EntityUserToModel(user)
+	modelUser := entity_model.UserEntityToModel(user)
 
 	if err := ur.db.Create(modelUser).Error; err != nil {
 		return err
 	}
-	
+
 	// Update entity with database-generated fields
 	user.CreatedAt = modelUser.CreatedAt
 	user.UpdatedAt = modelUser.UpdatedAt
-	
+
 	return nil
 }
 
 // UserRepositoryのコンストラクタ(ファクトリ)関数
-func NewUserRepository(db *gorm.DB) domainRepo.IUserRepository {
+func NewUserRepository(db *gorm.DB) user.IUserRepository {
 	return &userRepository{db}
 }

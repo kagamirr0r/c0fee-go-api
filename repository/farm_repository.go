@@ -2,8 +2,7 @@ package repository
 
 import (
 	"c0fee-api/common/converter/entity_model"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/farm"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
@@ -13,7 +12,7 @@ type farmRepository struct {
 	db *gorm.DB
 }
 
-func (fr *farmRepository) GetById(domainFarm *entity.Farm, id uint) error {
+func (fr *farmRepository) GetById(domainFarm *farm.Entity, id uint) error {
 	var modelFarm model.Farm
 	if err := fr.db.
 		Preload("Area").
@@ -24,12 +23,12 @@ func (fr *farmRepository) GetById(domainFarm *entity.Farm, id uint) error {
 	}
 
 	// Convert model to domain entity
-	entityFarm := entity_model.ModelFarmToEntity(&modelFarm)
+	entityFarm := entity_model.ModelToFarmEntity(&modelFarm)
 	*domainFarm = *entityFarm
 	return nil
 }
 
-func (fr *farmRepository) List(domainFarms *[]entity.Farm) error {
+func (fr *farmRepository) List(domainFarms *[]farm.Entity) error {
 	var modelFarms []model.Farm
 	if err := fr.db.
 		Preload("Area").
@@ -39,10 +38,10 @@ func (fr *farmRepository) List(domainFarms *[]entity.Farm) error {
 	}
 
 	// Convert model slice to domain entity slice
-	*domainFarms = entity_model.ModelFarmsToEntities(modelFarms)
+	*domainFarms = entity_model.ModelsToFarmEntities(modelFarms)
 	return nil
 }
 
-func NewFarmRepository(db *gorm.DB) domainRepo.IFarmRepository {
+func NewFarmRepository(db *gorm.DB) farm.IFarmRepository {
 	return &farmRepository{db}
 }
