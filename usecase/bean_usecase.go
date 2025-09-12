@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"c0fee-api/common/converter/dto_entity"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/bean"
+	"c0fee-api/domain/bean_rating"
+	"c0fee-api/domain/user"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
 	"errors"
@@ -23,14 +24,14 @@ type IBeanUsecase interface {
 }
 
 type beanUsecase struct {
-	ur        domainRepo.IUserRepository
-	br        domainRepo.IBeanRepository
-	brr       domainRepo.IBeanRatingRepository
+	ur        user.IUserRepository
+	br        bean.IBeanRepository
+	brr       bean_rating.IBeanRatingRepository
 	s3Service s3.IS3Service
 }
 
 func (bu *beanUsecase) Read(beanID uint) (dto.BeanOutput, error) {
-	var domainBean entity.Bean
+	var domainBean bean.Entity
 	if err := bu.br.GetById(&domainBean, beanID); err != nil {
 		return dto.BeanOutput{}, err
 	}
@@ -87,7 +88,7 @@ func (bu *beanUsecase) Create(userID string, data dto.BeanInput, imageFile *mult
 	}
 
 	// 作成されたBeanを取得（関連データ含む）
-	var createdBean entity.Bean
+	var createdBean bean.Entity
 	if err := bu.br.GetById(&createdBean, domainBean.ID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("failed to get created bean: %w", err)
 	}
@@ -108,9 +109,8 @@ func (bu *beanUsecase) Create(userID string, data dto.BeanInput, imageFile *mult
 }
 
 func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, newImageFile *multipart.FileHeader) (dto.BeanOutput, error) {
-
 	// Beanの存在確認と所有者チェック
-	var existingBean entity.Bean
+	var existingBean bean.Entity
 	if err := bu.br.GetById(&existingBean, beanID); err != nil {
 		return dto.BeanOutput{}, fmt.Errorf("bean not found: %w", err)
 	}
@@ -164,13 +164,7 @@ func (bu *beanUsecase) Update(beanID uint, userID string, data dto.BeanInput, ne
 		}
 	}
 
-	// 更新されたBeanを取得（関連データ含む）
-	var updatedBean entity.Bean
-	if err := bu.br.GetById(&updatedBean, beanID); err != nil {
-		return dto.BeanOutput{}, fmt.Errorf("failed to get updated bean: %w", err)
-	}
-
-	return bu.generateBeanOutput(&updatedBean)
+	return bu.Read(beanID)
 }
 
 func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error {
@@ -194,8 +188,8 @@ func (bu *beanUsecase) validateImageFile(imageFile *multipart.FileHeader) error 
 // validateInputData は共通のバリデーション処理を実行します
 func (bu *beanUsecase) validateInputData(userID string, imageFile *multipart.FileHeader) error {
 	// ユーザーの存在確認
-	var user entity.User
-	if err := bu.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
+	var userEntity user.Entity
+	if err := bu.ur.GetById(&userEntity, uuid.MustParse(userID)); err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
 
@@ -211,7 +205,7 @@ func (bu *beanUsecase) validateInputData(userID string, imageFile *multipart.Fil
 
 // createBeanRating は新しいBeanRatingを作成します
 func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
-	beanRating := entity.BeanRating{
+	beanRatingEntity := bean_rating.Entity{
 		BeanID:     beanID,
 		UserID:     uuid.MustParse(userID),
 		Bitterness: ratingData.Bitterness,
@@ -220,10 +214,10 @@ func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *
 	}
 
 	if ratingData.FlavorNote != nil {
-		beanRating.FlavorNote = *ratingData.FlavorNote
+		beanRatingEntity.FlavorNote = *ratingData.FlavorNote
 	}
 
-	if err := bu.brr.Create(&beanRating); err != nil {
+	if err := bu.brr.Create(&beanRatingEntity); err != nil {
 		return fmt.Errorf("failed to create bean rating: %w", err)
 	}
 
@@ -234,7 +228,7 @@ func (bu *beanUsecase) createBeanRating(beanID uint, userID string, ratingData *
 func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *dto.BeanRatingRef) error {
 	if ratingData.ID != nil {
 		// IDがある場合は更新
-		beanRating := entity.BeanRating{
+		beanRatingEntity := bean_rating.Entity{
 			ID:         uint(*ratingData.ID),
 			BeanID:     beanID,
 			UserID:     uuid.MustParse(userID),
@@ -244,10 +238,10 @@ func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *
 		}
 
 		if ratingData.FlavorNote != nil {
-			beanRating.FlavorNote = *ratingData.FlavorNote
+			beanRatingEntity.FlavorNote = *ratingData.FlavorNote
 		}
 
-		if err := bu.brr.UpdateByID(&beanRating); err != nil {
+		if err := bu.brr.UpdateByID(&beanRatingEntity); err != nil {
 			return fmt.Errorf("failed to update bean rating: %w", err)
 		}
 	} else {
@@ -261,7 +255,7 @@ func (bu *beanUsecase) handleBeanRating(beanID uint, userID string, ratingData *
 }
 
 // generateBeanOutput は画像URLを生成してBeanOutputを作成します
-func (bu *beanUsecase) generateBeanOutput(domainBean *entity.Bean) (dto.BeanOutput, error) {
+func (bu *beanUsecase) generateBeanOutput(domainBean *bean.Entity) (dto.BeanOutput, error) {
 	var imageURL string
 	if domainBean.ImageKey != nil {
 		url, err := bu.s3Service.GenerateBeanImageURL(*domainBean.ImageKey)
@@ -275,7 +269,7 @@ func (bu *beanUsecase) generateBeanOutput(domainBean *entity.Bean) (dto.BeanOutp
 	return dto_entity.EntityBeanToDto(domainBean, imageURL), nil
 }
 
-func NewBeanUsecase(ur domainRepo.IUserRepository, br domainRepo.IBeanRepository, brr domainRepo.IBeanRatingRepository, s3Service s3.IS3Service) IBeanUsecase {
+func NewBeanUsecase(ur user.IUserRepository, br bean.IBeanRepository, brr bean_rating.IBeanRatingRepository, s3Service s3.IS3Service) IBeanUsecase {
 	return &beanUsecase{
 		ur:        ur,
 		br:        br,
