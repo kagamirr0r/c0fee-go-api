@@ -1,44 +1,40 @@
 package entity_model
 
 import (
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/area"
+	"c0fee-api/domain/summary"
 	"c0fee-api/model"
 )
 
-// Domain Entity → DB Model
-func EntityAreaToModel(entityArea *entity.Area) *model.Area {
-	if entityArea == nil {
+// Domain Area Entity → DB Model
+func AreaEntityToModel(areaEntity *area.Entity) *model.Area {
+	if areaEntity == nil {
 		return nil
 	}
 
 	modelArea := &model.Area{
-		ID:        entityArea.ID,
-		CountryID: entityArea.CountryID,
-		Name:      entityArea.Name,
-		CreatedAt: entityArea.CreatedAt,
-		UpdatedAt: entityArea.UpdatedAt,
+		ID:        areaEntity.ID,
+		CountryID: areaEntity.CountryID,
+		Name:      areaEntity.Name,
+		CreatedAt: areaEntity.CreatedAt,
+		UpdatedAt: areaEntity.UpdatedAt,
 	}
 
 	// Convert related entities - avoiding circular reference
-	if entityArea.Country.ID != 0 {
+	if areaEntity.Country.ID != 0 {
 		modelArea.Country = model.Country{
-			ID:        entityArea.Country.ID,
-			Name:      entityArea.Country.Name,
-			Code:      entityArea.Country.Code,
-			CreatedAt: entityArea.Country.CreatedAt,
-			UpdatedAt: entityArea.Country.UpdatedAt,
+			ID:   areaEntity.Country.ID,
+			Name: areaEntity.Country.Name,
 		}
 	}
 
-	if len(entityArea.Farms) > 0 {
-		modelArea.Farms = make([]model.Farm, len(entityArea.Farms))
-		for i, farm := range entityArea.Farms {
+	if len(areaEntity.Farms) > 0 {
+		modelArea.Farms = make([]model.Farm, len(areaEntity.Farms))
+		for i, farm := range areaEntity.Farms {
 			modelArea.Farms[i] = model.Farm{
-				ID:        farm.ID,
-				Name:      farm.Name,
-				AreaID:    farm.AreaID,
-				CreatedAt: farm.CreatedAt,
-				UpdatedAt: farm.UpdatedAt,
+				ID:     farm.ID,
+				Name:   farm.Name,
+				AreaID: farm.AreaID,
 			}
 		}
 	}
@@ -46,13 +42,13 @@ func EntityAreaToModel(entityArea *entity.Area) *model.Area {
 	return modelArea
 }
 
-// DB Model → Domain Entity
-func ModelAreaToEntity(modelArea *model.Area) *entity.Area {
+// DB Model → Domain Area Entity
+func ModelToAreaEntity(modelArea *model.Area) *area.Entity {
 	if modelArea == nil {
 		return nil
 	}
 
-	entityArea := &entity.Area{
+	areaEntity := &area.Entity{
 		ID:        modelArea.ID,
 		CountryID: modelArea.CountryID,
 		Name:      modelArea.Name,
@@ -62,45 +58,40 @@ func ModelAreaToEntity(modelArea *model.Area) *entity.Area {
 
 	// Convert related entities - avoiding circular reference
 	if modelArea.Country.ID != 0 {
-		entityArea.Country = entity.Country{
-			ID:        modelArea.Country.ID,
-			Name:      modelArea.Country.Name,
-			Code:      modelArea.Country.Code,
-			CreatedAt: modelArea.Country.CreatedAt,
-			UpdatedAt: modelArea.Country.UpdatedAt,
+		areaEntity.Country = summary.Country{
+			ID:   modelArea.Country.ID,
+			Name: modelArea.Country.Name,
 		}
 	}
 
 	if len(modelArea.Farms) > 0 {
-		entityArea.Farms = make([]entity.Farm, len(modelArea.Farms))
+		areaEntity.Farms = make([]summary.Farm, len(modelArea.Farms))
 		for i, farm := range modelArea.Farms {
-			entityArea.Farms[i] = entity.Farm{
-				ID:        farm.ID,
-				Name:      farm.Name,
-				AreaID:    farm.AreaID,
-				CreatedAt: farm.CreatedAt,
-				UpdatedAt: farm.UpdatedAt,
+			areaEntity.Farms[i] = summary.Farm{
+				ID:     farm.ID,
+				Name:   farm.Name,
+				AreaID: farm.AreaID,
 			}
 		}
 	}
 
-	return entityArea
+	return areaEntity
 }
 
-// Convert slice of models to entities
-func ModelAreasToEntities(modelAreas []model.Area) []entity.Area {
-	entities := make([]entity.Area, len(modelAreas))
+// Convert slice of models to area entities
+func ModelsToAreaEntities(modelAreas []model.Area) []area.Entity {
+	entities := make([]area.Entity, len(modelAreas))
 	for i, model := range modelAreas {
-		entities[i] = *ModelAreaToEntity(&model)
+		entities[i] = *ModelToAreaEntity(&model)
 	}
 	return entities
 }
 
-// Convert slice of entities to models
-func EntityAreasToModels(entityAreas []entity.Area) []model.Area {
-	models := make([]model.Area, len(entityAreas))
-	for i, entity := range entityAreas {
-		models[i] = *EntityAreaToModel(&entity)
+// Convert slice of area entities to models
+func AreaEntitiesToModels(areaEntities []area.Entity) []model.Area {
+	models := make([]model.Area, len(areaEntities))
+	for i, entity := range areaEntities {
+		models[i] = *AreaEntityToModel(&entity)
 	}
 	return models
 }
