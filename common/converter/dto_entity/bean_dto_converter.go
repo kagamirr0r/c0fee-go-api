@@ -2,7 +2,8 @@ package dto_entity
 
 import (
 	"c0fee-api/common"
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/bean"
+	"c0fee-api/domain/summary"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
 	"time"
@@ -11,44 +12,44 @@ import (
 )
 
 // DTO -> Entity
-func DtoBeanToEntity(userID string, data dto.BeanInput) (entity.Bean, []uint) {
-	bean := entity.Bean{
+func DtoBeanToEntity(userID string, data dto.BeanInput) (bean.Entity, []uint) {
+	beanEntity := bean.Entity{
 		Name:         data.Name,
 		UserID:       uuid.MustParse(userID),
 		CountryID:    data.CountryID,
 		RoasterID:    data.RoasterID,
 		RoastLevelID: data.RoastLevelID,
 		Price:        data.Price,
-		Currency:     entity.JPY, // デフォルト
+		Currency:     bean.JPY, // デフォルト
 	}
 
 	// Optional fields
 	if data.ID != nil {
-		bean.ID = *data.ID
+		beanEntity.ID = *data.ID
 	}
 	if data.AreaID != nil {
-		bean.AreaID = data.AreaID
+		beanEntity.AreaID = data.AreaID
 	}
 	if data.FarmID != nil {
-		bean.FarmID = data.FarmID
+		beanEntity.FarmID = data.FarmID
 	}
 	if data.FarmerID != nil {
-		bean.FarmerID = data.FarmerID
+		beanEntity.FarmerID = data.FarmerID
 	}
 	if data.ProcessMethodID != nil {
-		bean.ProcessMethodID = data.ProcessMethodID
+		beanEntity.ProcessMethodID = data.ProcessMethodID
 	}
 
-	return bean, data.VarietyIDs
+	return beanEntity, data.VarietyIDs
 }
 
 // Entity -> DTO
-func EntityBeanToDto(bean *entity.Bean, imageURL string) dto.BeanOutput {
+func EntityBeanToDto(beanEntity *bean.Entity, imageURL string) dto.BeanOutput {
 	response := dto.BeanOutput{
-		ID:        bean.ID,
-		Name:      bean.Name,
-		CreatedAt: bean.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: bean.UpdatedAt.Format(time.RFC3339),
+		ID:        beanEntity.ID,
+		Name:      beanEntity.Name,
+		CreatedAt: beanEntity.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: beanEntity.UpdatedAt.Format(time.RFC3339),
 	}
 
 	if imageURL != "" {
@@ -56,10 +57,10 @@ func EntityBeanToDto(bean *entity.Bean, imageURL string) dto.BeanOutput {
 	}
 
 	// User (IDは string)
-	if bean.User.ID.String() != "00000000-0000-0000-0000-000000000000" {
+	if beanEntity.User.ID.String() != "00000000-0000-0000-0000-000000000000" {
 		response.User = dto.IdNameSummary{
-			ID:   bean.User.ID.String(),
-			Name: bean.User.Name,
+			ID:   beanEntity.User.ID.String(),
+			Name: beanEntity.User.Name,
 		}
 	} else {
 		response.User = dto.IdNameSummary{
@@ -69,42 +70,42 @@ func EntityBeanToDto(bean *entity.Bean, imageURL string) dto.BeanOutput {
 	}
 
 	// Roaster, Country, RoastLevel etc. (IDは uint)
-	response.Roaster = dto.IdNameSummary{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
-	response.Country = dto.IdNameSummary{ID: bean.Country.ID, Name: bean.Country.Name}
-	response.RoastLevel = dto.IdNameSummary{ID: bean.RoastLevel.ID, Name: bean.RoastLevel.Name}
+	response.Roaster = dto.IdNameSummary{ID: beanEntity.Roaster.ID, Name: beanEntity.Roaster.Name}
+	response.Country = dto.IdNameSummary{ID: beanEntity.Country.ID, Name: beanEntity.Country.Name}
+	response.RoastLevel = dto.IdNameSummary{ID: beanEntity.RoastLevel.ID, Name: beanEntity.RoastLevel.Name}
 
 	// Optional fields
-	if bean.Area != nil {
-		response.Area = &dto.IdNameSummary{ID: bean.Area.ID, Name: bean.Area.Name}
+	if beanEntity.Area != nil {
+		response.Area = &dto.IdNameSummary{ID: beanEntity.Area.ID, Name: beanEntity.Area.Name}
 	}
-	if bean.Farm != nil {
-		response.Farm = &dto.IdNameSummary{ID: bean.Farm.ID, Name: bean.Farm.Name}
+	if beanEntity.Farm != nil {
+		response.Farm = &dto.IdNameSummary{ID: beanEntity.Farm.ID, Name: beanEntity.Farm.Name}
 	}
-	if bean.Farmer != nil {
-		response.Farmer = &dto.IdNameSummary{ID: bean.Farmer.ID, Name: bean.Farmer.Name}
+	if beanEntity.Farmer != nil {
+		response.Farmer = &dto.IdNameSummary{ID: beanEntity.Farmer.ID, Name: beanEntity.Farmer.Name}
 	}
-	if bean.ProcessMethod != nil {
-		response.ProcessMethod = &dto.IdNameSummary{ID: bean.ProcessMethod.ID, Name: bean.ProcessMethod.Name}
+	if beanEntity.ProcessMethod != nil {
+		response.ProcessMethod = &dto.IdNameSummary{ID: beanEntity.ProcessMethod.ID, Name: beanEntity.ProcessMethod.Name}
 	}
 
 	// Varieties
-	varieties := make([]dto.IdNameSummary, len(bean.Varieties))
-	for i, variety := range bean.Varieties {
+	varieties := make([]dto.IdNameSummary, len(beanEntity.Varieties))
+	for i, variety := range beanEntity.Varieties {
 		varieties[i] = dto.IdNameSummary{ID: variety.ID, Name: variety.Name}
 	}
 	response.Varieties = varieties
 
 	// Price
-	if bean.Price != nil {
+	if beanEntity.Price != nil {
 		response.Price = &dto.PriceSummary{
-			Amount:   float64(*bean.Price),
-			Currency: string(bean.Currency),
+			Amount:   float64(*beanEntity.Price),
+			Currency: string(beanEntity.Currency),
 		}
 	}
 
 	// BeanRatings
-	ratings := make([]dto.BeanRatingSummary, len(bean.BeanRatings))
-	for i, rating := range bean.BeanRatings {
+	ratings := make([]dto.BeanRatingSummary, len(beanEntity.BeanRatings))
+	for i, rating := range beanEntity.BeanRatings {
 		var flavorNote *string
 		if rating.FlavorNote != "" {
 			flavorNote = &rating.FlavorNote
@@ -123,12 +124,12 @@ func EntityBeanToDto(bean *entity.Bean, imageURL string) dto.BeanOutput {
 	return response
 }
 
-func EntityBeanToBeanSummary(bean *entity.Bean, imageURL string) dto.BeanSummary {
+func EntityBeanToBeanSummary(beanEntity *bean.Entity, imageURL string) dto.BeanSummary {
 	response := dto.BeanSummary{
-		ID:        bean.ID,
-		Name:      bean.Name,
-		CreatedAt: bean.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: bean.UpdatedAt.Format(time.RFC3339),
+		ID:        beanEntity.ID,
+		Name:      beanEntity.Name,
+		CreatedAt: beanEntity.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: beanEntity.UpdatedAt.Format(time.RFC3339),
 	}
 
 	if imageURL != "" {
@@ -136,31 +137,31 @@ func EntityBeanToBeanSummary(bean *entity.Bean, imageURL string) dto.BeanSummary
 	}
 
 	response.User = dto.IdNameSummary{
-		ID:   bean.User.ID.String(),
-		Name: bean.User.Name,
+		ID:   beanEntity.User.ID.String(),
+		Name: beanEntity.User.Name,
 	}
 
 	// Roaster, Country, etc. (IDは uint)
-	response.Roaster = dto.IdNameSummary{ID: bean.Roaster.ID, Name: bean.Roaster.Name}
-	response.Country = dto.IdNameSummary{ID: bean.Country.ID, Name: bean.Country.Name}
+	response.Roaster = dto.IdNameSummary{ID: beanEntity.Roaster.ID, Name: beanEntity.Roaster.Name}
+	response.Country = dto.IdNameSummary{ID: beanEntity.Country.ID, Name: beanEntity.Country.Name}
 
 	// Optional fields
-	if bean.Area != nil {
-		response.Area = &dto.IdNameSummary{ID: bean.Area.ID, Name: bean.Area.Name}
+	if beanEntity.Area != nil {
+		response.Area = &dto.IdNameSummary{ID: beanEntity.Area.ID, Name: beanEntity.Area.Name}
 	}
-	if bean.Farm != nil {
-		response.Farm = &dto.IdNameSummary{ID: bean.Farm.ID, Name: bean.Farm.Name}
+	if beanEntity.Farm != nil {
+		response.Farm = &dto.IdNameSummary{ID: beanEntity.Farm.ID, Name: beanEntity.Farm.Name}
 	}
-	if bean.Farmer != nil {
-		response.Farmer = &dto.IdNameSummary{ID: bean.Farmer.ID, Name: bean.Farmer.Name}
+	if beanEntity.Farmer != nil {
+		response.Farmer = &dto.IdNameSummary{ID: beanEntity.Farmer.ID, Name: beanEntity.Farmer.Name}
 	}
-	if bean.ProcessMethod != nil {
-		response.ProcessMethod = &dto.IdNameSummary{ID: bean.ProcessMethod.ID, Name: bean.ProcessMethod.Name}
+	if beanEntity.ProcessMethod != nil {
+		response.ProcessMethod = &dto.IdNameSummary{ID: beanEntity.ProcessMethod.ID, Name: beanEntity.ProcessMethod.Name}
 	}
 
 	// Varieties
-	varieties := make([]dto.IdNameSummary, len(bean.Varieties))
-	for i, variety := range bean.Varieties {
+	varieties := make([]dto.IdNameSummary, len(beanEntity.Varieties))
+	for i, variety := range beanEntity.Varieties {
 		varieties[i] = dto.IdNameSummary{ID: variety.ID, Name: variety.Name}
 	}
 	response.Varieties = varieties
@@ -168,8 +169,8 @@ func EntityBeanToBeanSummary(bean *entity.Bean, imageURL string) dto.BeanSummary
 	return response
 }
 
-// BeanEntitiesToBeansOutput converts []entity.Bean to dto.BeansOutput
-func BeanEntitiesToBeansOutput(domainBeans []entity.Bean, params common.QueryParams, s3Service s3.IS3Service) (dto.BeansOutput, error) {
+// BeanEntitiesToBeansOutput converts []bean.Entity to dto.BeansOutput
+func BeanEntitiesToBeansOutput(domainBeans []bean.Entity, params common.QueryParams, s3Service s3.IS3Service) (dto.BeansOutput, error) {
 	userBeans := make([]dto.BeanSummary, len(domainBeans))
 	for i, bean := range domainBeans {
 		var imageURL string
@@ -195,6 +196,33 @@ func BeanEntitiesToBeansOutput(domainBeans []entity.Bean, params common.QueryPar
 	beansResponse := dto.BeansOutput{
 		Beans:      userBeans,
 		Count:      uint(len(domainBeans)),
+		NextCursor: nextCursor,
+	}
+
+	return beansResponse, nil
+}
+
+// BeanSummariesToBeansOutput converts []summary.Bean to dto.BeansOutput
+func BeanSummariesToBeansOutput(summaryBeans []summary.Bean, params common.QueryParams, s3Service s3.IS3Service) (dto.BeansOutput, error) {
+	userBeans := make([]dto.BeanSummary, len(summaryBeans))
+	for i, bean := range summaryBeans {
+		userBeans[i] = dto.BeanSummary{
+			ID:   bean.ID,
+			Name: bean.Name,
+		}
+	}
+
+	// カーソルページネーション用の情報を生成
+	var nextCursor *uint
+	if len(summaryBeans) > 0 && params.Limit > 0 && len(summaryBeans) == params.Limit {
+		// 最後のBeanのIDをnext_cursorとして設定
+		lastBeanID := summaryBeans[len(summaryBeans)-1].ID
+		nextCursor = &lastBeanID
+	}
+
+	beansResponse := dto.BeansOutput{
+		Beans:      userBeans,
+		Count:      uint(len(summaryBeans)),
 		NextCursor: nextCursor,
 	}
 

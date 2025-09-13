@@ -1,8 +1,7 @@
 package usecase
 
 import (
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/roast_level"
 	"c0fee-api/dto"
 )
 
@@ -11,11 +10,11 @@ type IRoastLevelUsecase interface {
 }
 
 type roastLevelUsecase struct {
-	rlr domainRepo.IRoastLevelRepository
+	rlr roast_level.IRoastLevelRepository
 }
 
 func (rlu *roastLevelUsecase) GetAll() ([]dto.IdNameSummary, error) {
-	var roastLevels []entity.RoastLevel
+	var roastLevels []roast_level.Entity
 	if err := rlu.rlr.GetAll(&roastLevels); err != nil {
 		return nil, err
 	}
@@ -31,6 +30,6 @@ func (rlu *roastLevelUsecase) GetAll() ([]dto.IdNameSummary, error) {
 	return result, nil
 }
 
-func NewRoastLevelUsecase(rlr domainRepo.IRoastLevelRepository) IRoastLevelUsecase {
+func NewRoastLevelUsecase(rlr roast_level.IRoastLevelRepository) IRoastLevelUsecase {
 	return &roastLevelUsecase{rlr}
 }

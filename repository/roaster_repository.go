@@ -3,8 +3,7 @@ package repository
 import (
 	"c0fee-api/common"
 	"c0fee-api/common/converter/entity_model"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/roaster"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
@@ -14,18 +13,18 @@ type roasterRepository struct {
 	db *gorm.DB
 }
 
-func (rr *roasterRepository) List(domainRoasters *[]entity.Roaster) error {
+func (rr *roasterRepository) List(domainRoasters *[]roaster.Entity) error {
 	var modelRoasters []model.Roaster
 	if err := rr.db.Find(&modelRoasters).Error; err != nil {
 		return err
 	}
 
 	// Convert model slice to domain entity slice
-	*domainRoasters = entity_model.ModelRoastersToEntities(modelRoasters)
+	*domainRoasters = entity_model.ModelsToRoasterEntities(modelRoasters)
 	return nil
 }
 
-func (rr *roasterRepository) Search(domainRoasters *[]entity.Roaster, params common.QueryParams) error {
+func (rr *roasterRepository) Search(domainRoasters *[]roaster.Entity, params common.QueryParams) error {
 	// 基本のクエリを初期化
 	query := rr.db
 
@@ -45,11 +44,12 @@ func (rr *roasterRepository) Search(domainRoasters *[]entity.Roaster, params com
 		return err
 	}
 
-	*domainRoasters = entity_model.ModelRoastersToEntities(modelRoasters)
+	// Convert model slice to domain entity slice
+	*domainRoasters = entity_model.ModelsToRoasterEntities(modelRoasters)
 	return nil
 }
 
-func (rr *roasterRepository) GetById(domainRoaster *entity.Roaster, id uint) error {
+func (rr *roasterRepository) GetById(domainRoaster *roaster.Entity, id uint) error {
 	var modelRoaster model.Roaster
 	if err := rr.db.
 		Preload("Beans").
@@ -70,32 +70,32 @@ func (rr *roasterRepository) GetById(domainRoaster *entity.Roaster, id uint) err
 		return err
 	}
 
-	*domainRoaster = *entity_model.ModelRoasterToEntity(&modelRoaster)
+	*domainRoaster = *entity_model.ModelToRoasterEntity(&modelRoaster)
 	return nil
 }
 
-func (rr *roasterRepository) Create(domainRoaster *entity.Roaster) error {
-	modelRoaster := entity_model.EntityRoasterToModel(domainRoaster)
+func (rr *roasterRepository) Create(domainRoaster *roaster.Entity) error {
+	modelRoaster := entity_model.RoasterEntityToModel(domainRoaster)
 
 	if err := rr.db.Create(modelRoaster).Error; err != nil {
 		return err
 	}
 
-	*domainRoaster = *entity_model.ModelRoasterToEntity(modelRoaster)
+	*domainRoaster = *entity_model.ModelToRoasterEntity(modelRoaster)
 	return nil
 }
 
-func (rr *roasterRepository) Update(domainRoaster *entity.Roaster) error {
-	modelRoaster := entity_model.EntityRoasterToModel(domainRoaster)
+func (rr *roasterRepository) Update(domainRoaster *roaster.Entity) error {
+	modelRoaster := entity_model.RoasterEntityToModel(domainRoaster)
 
 	if err := rr.db.Save(modelRoaster).Error; err != nil {
 		return err
 	}
 
-	*domainRoaster = *entity_model.ModelRoasterToEntity(modelRoaster)
+	*domainRoaster = *entity_model.ModelToRoasterEntity(modelRoaster)
 	return nil
 }
 
-func NewRoasterRepository(db *gorm.DB) domainRepo.IRoasterRepository {
+func NewRoasterRepository(db *gorm.DB) roaster.IRoasterRepository {
 	return &roasterRepository{db}
 }

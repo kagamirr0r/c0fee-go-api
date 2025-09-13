@@ -3,8 +3,9 @@ package usecase
 import (
 	"c0fee-api/common"
 	"c0fee-api/common/converter/dto_entity"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/bean"
+	"c0fee-api/domain/roaster"
+	"c0fee-api/domain/user"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
 	"errors"
@@ -24,14 +25,14 @@ type IRoasterUsecase interface {
 }
 
 type roasterUsecase struct {
-	ur        domainRepo.IUserRepository
-	rr        domainRepo.IRoasterRepository
-	br        domainRepo.IBeanRepository
+	ur        user.IUserRepository
+	rr        roaster.IRoasterRepository
+	br        bean.IBeanRepository
 	s3Service s3.IS3Service
 }
 
 func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, error) {
-	var roasters []entity.Roaster
+	var roasters []roaster.Entity
 
 	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
 	if params.NameLike != "" || params.Limit > 0 {
@@ -47,20 +48,20 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 	}
 
 	roastersResponse := make([]dto.RoasterOutput, len(roasters))
-	for i, roaster := range roasters {
+	for i, roasterEntity := range roasters {
 		var imageURL *string
-		if roaster.ImageKey != nil && *roaster.ImageKey != "" {
-			url, err := ru.s3Service.GenerateRoasterImageURL(*roaster.ImageKey)
+		if roasterEntity.ImageKey != nil && *roasterEntity.ImageKey != "" {
+			url, err := ru.s3Service.GenerateRoasterImageURL(*roasterEntity.ImageKey)
 			if err == nil && url != "" {
 				imageURL = &url
 			}
 		}
 
 		roastersResponse[i] = dto.RoasterOutput{
-			ID:       roaster.ID,
-			Name:     roaster.Name,
-			Address:  roaster.Address,
-			WebURL:   roaster.WebURL,
+			ID:       roasterEntity.ID,
+			Name:     roasterEntity.Name,
+			Address:  roasterEntity.Address,
+			WebURL:   roasterEntity.WebURL,
 			ImageURL: imageURL,
 		}
 	}
@@ -69,7 +70,7 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 }
 
 func (ru *roasterUsecase) GetById(id uint) (dto.RoasterOutput, error) {
-	var roaster entity.Roaster
+	var roaster roaster.Entity
 	err := ru.rr.GetById(&roaster, id)
 	if err != nil {
 		return dto.RoasterOutput{}, err
@@ -83,8 +84,8 @@ func (ru *roasterUsecase) GetById(id uint) (dto.RoasterOutput, error) {
 		}
 	}
 
-	// Use the preloaded beans from roaster entity
-	beansOutput, err := dto_entity.BeanEntitiesToBeansOutput(roaster.Beans, common.QueryParams{}, ru.s3Service)
+	// Use the preloaded beans from roaster entity  
+	beansOutput, err := dto_entity.BeanSummariesToBeansOutput(roaster.Beans, common.QueryParams{}, ru.s3Service)
 	if err != nil {
 		return dto.RoasterOutput{}, err
 	}
@@ -107,7 +108,7 @@ func (ru *roasterUsecase) Create(userID string, data dto.RoasterInput, imageFile
 	}
 
 	// Domain Roasterエンティティを作成
-	domainRoaster := entity.Roaster{
+	domainRoaster := roaster.Entity{
 		Name:    data.Name,
 		Address: data.Address,
 	}
@@ -138,7 +139,7 @@ func (ru *roasterUsecase) Create(userID string, data dto.RoasterInput, imageFile
 	}
 
 	// 作成されたRoasterを取得（関連データ含む）
-	var createdRoaster entity.Roaster
+	var createdRoaster roaster.Entity
 	if err := ru.rr.GetById(&createdRoaster, domainRoaster.ID); err != nil {
 		return dto.RoasterOutput{}, fmt.Errorf("failed to get created roaster: %w", err)
 	}
@@ -167,7 +168,7 @@ func (ru *roasterUsecase) validateImageFile(imageFile *multipart.FileHeader) err
 // validateInputData は共通のバリデーション処理を実行します
 func (ru *roasterUsecase) validateInputData(userID string, imageFile *multipart.FileHeader) error {
 	// ユーザーの存在確認
-	var user entity.User
+	var user user.Entity
 	if err := ru.ur.GetById(&user, uuid.MustParse(userID)); err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
@@ -183,7 +184,7 @@ func (ru *roasterUsecase) validateInputData(userID string, imageFile *multipart.
 }
 
 // generateRoasterOutput は画像URLを生成してRoasterOutputを作成します
-func (ru *roasterUsecase) generateRoasterOutput(domainRoaster *entity.Roaster) (dto.RoasterOutput, error) {
+func (ru *roasterUsecase) generateRoasterOutput(domainRoaster *roaster.Entity) (dto.RoasterOutput, error) {
 	var imageURL *string
 	if domainRoaster.ImageKey != nil && *domainRoaster.ImageKey != "" {
 		url, err := ru.s3Service.GenerateRoasterImageURL(*domainRoaster.ImageKey)
@@ -193,7 +194,7 @@ func (ru *roasterUsecase) generateRoasterOutput(domainRoaster *entity.Roaster) (
 	}
 
 	// Use the preloaded beans from roaster entity
-	beansOutput, err := dto_entity.BeanEntitiesToBeansOutput(domainRoaster.Beans, common.QueryParams{}, ru.s3Service)
+	beansOutput, err := dto_entity.BeanSummariesToBeansOutput(domainRoaster.Beans, common.QueryParams{}, ru.s3Service)
 	if err != nil {
 		return dto.RoasterOutput{}, err
 	}
@@ -208,6 +209,6 @@ func (ru *roasterUsecase) generateRoasterOutput(domainRoaster *entity.Roaster) (
 	}, nil
 }
 
-func NewRoasterUsecase(ur domainRepo.IUserRepository, rr domainRepo.IRoasterRepository, br domainRepo.IBeanRepository, s3Service s3.IS3Service) IRoasterUsecase {
+func NewRoasterUsecase(ur user.IUserRepository, rr roaster.IRoasterRepository, br bean.IBeanRepository, s3Service s3.IS3Service) IRoasterUsecase {
 	return &roasterUsecase{ur, rr, br, s3Service}
 }

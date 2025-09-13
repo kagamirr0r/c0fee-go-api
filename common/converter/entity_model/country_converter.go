@@ -1,34 +1,33 @@
 package entity_model
 
 import (
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/country"
+	"c0fee-api/domain/summary"
 	"c0fee-api/model"
 )
 
 // Domain Entity → DB Model
-func EntityCountryToModel(entityCountry *entity.Country) *model.Country {
-	if entityCountry == nil {
+func CountryEntityToModel(countryEntity *country.Entity) *model.Country {
+	if countryEntity == nil {
 		return nil
 	}
 
 	modelCountry := &model.Country{
-		ID:        entityCountry.ID,
-		Name:      entityCountry.Name,
-		Code:      entityCountry.Code,
-		CreatedAt: entityCountry.CreatedAt,
-		UpdatedAt: entityCountry.UpdatedAt,
+		ID:        countryEntity.ID,
+		Name:      countryEntity.Name,
+		Code:      countryEntity.Code,
+		CreatedAt: countryEntity.CreatedAt,
+		UpdatedAt: countryEntity.UpdatedAt,
 	}
 
 	// Convert related entities - avoiding circular reference
-	if len(entityCountry.Areas) > 0 {
-		modelCountry.Areas = make([]model.Area, len(entityCountry.Areas))
-		for i, area := range entityCountry.Areas {
+	if len(countryEntity.Areas) > 0 {
+		modelCountry.Areas = make([]model.Area, len(countryEntity.Areas))
+		for i, area := range countryEntity.Areas {
 			modelCountry.Areas[i] = model.Area{
 				ID:        area.ID,
 				Name:      area.Name,
 				CountryID: area.CountryID,
-				CreatedAt: area.CreatedAt,
-				UpdatedAt: area.UpdatedAt,
 			}
 		}
 	}
@@ -37,12 +36,12 @@ func EntityCountryToModel(entityCountry *entity.Country) *model.Country {
 }
 
 // DB Model → Domain Entity
-func ModelCountryToEntity(modelCountry *model.Country) *entity.Country {
+func ModelToCountryEntity(modelCountry *model.Country) *country.Entity {
 	if modelCountry == nil {
 		return nil
 	}
 
-	entityCountry := &entity.Country{
+	countryEntity := &country.Entity{
 		ID:        modelCountry.ID,
 		Name:      modelCountry.Name,
 		Code:      modelCountry.Code,
@@ -52,35 +51,33 @@ func ModelCountryToEntity(modelCountry *model.Country) *entity.Country {
 
 	// Convert related entities - avoiding circular reference
 	if len(modelCountry.Areas) > 0 {
-		entityCountry.Areas = make([]entity.Area, len(modelCountry.Areas))
+		countryEntity.Areas = make([]summary.Area, len(modelCountry.Areas))
 		for i, area := range modelCountry.Areas {
-			entityCountry.Areas[i] = entity.Area{
+			countryEntity.Areas[i] = summary.Area{
 				ID:        area.ID,
 				Name:      area.Name,
 				CountryID: area.CountryID,
-				CreatedAt: area.CreatedAt,
-				UpdatedAt: area.UpdatedAt,
 			}
 		}
 	}
 
-	return entityCountry
+	return countryEntity
 }
 
-// Convert slice of models to entities
-func ModelCountriesToEntities(modelCountries []model.Country) []entity.Country {
-	entities := make([]entity.Country, len(modelCountries))
+// Model slice → Country Entity slice
+func ModelsToCountryEntities(modelCountries []model.Country) []country.Entity {
+	entities := make([]country.Entity, len(modelCountries))
 	for i, model := range modelCountries {
-		entities[i] = *ModelCountryToEntity(&model)
+		entities[i] = *ModelToCountryEntity(&model)
 	}
 	return entities
 }
 
-// Convert slice of entities to models
-func EntityCountriesToModels(entityCountries []entity.Country) []model.Country {
-	models := make([]model.Country, len(entityCountries))
-	for i, entity := range entityCountries {
-		models[i] = *EntityCountryToModel(&entity)
+// Country Entity slice → Model slice
+func CountryEntitiesToModels(countryEntities []country.Entity) []model.Country {
+	models := make([]model.Country, len(countryEntities))
+	for i, entity := range countryEntities {
+		models[i] = *CountryEntityToModel(&entity)
 	}
 	return models
 }

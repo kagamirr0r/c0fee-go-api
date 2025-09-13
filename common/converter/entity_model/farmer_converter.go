@@ -1,32 +1,31 @@
 package entity_model
 
 import (
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/farmer"
+	"c0fee-api/domain/summary"
 	"c0fee-api/model"
 )
 
 // Domain Entity → DB Model
-func EntityFarmerToModel(entityFarmer *entity.Farmer) *model.Farmer {
-	if entityFarmer == nil {
+func FarmerEntityToModel(farmerEntity *farmer.Entity) *model.Farmer {
+	if farmerEntity == nil {
 		return nil
 	}
 
 	modelFarmer := &model.Farmer{
-		ID:        entityFarmer.ID,
-		Name:      entityFarmer.Name,
-		FarmID:    entityFarmer.FarmID,
-		CreatedAt: entityFarmer.CreatedAt,
-		UpdatedAt: entityFarmer.UpdatedAt,
+		ID:        farmerEntity.ID,
+		Name:      farmerEntity.Name,
+		FarmID:    farmerEntity.FarmID,
+		CreatedAt: farmerEntity.CreatedAt,
+		UpdatedAt: farmerEntity.UpdatedAt,
 	}
 
 	// Convert related entities - avoiding circular reference
-	if entityFarmer.Farm.ID != 0 {
+	if farmerEntity.Farm.ID != 0 {
 		modelFarmer.Farm = model.Farm{
-			ID:        entityFarmer.Farm.ID,
-			Name:      entityFarmer.Farm.Name,
-			AreaID:    entityFarmer.Farm.AreaID,
-			CreatedAt: entityFarmer.Farm.CreatedAt,
-			UpdatedAt: entityFarmer.Farm.UpdatedAt,
+			ID:     farmerEntity.Farm.ID,
+			Name:   farmerEntity.Farm.Name,
+			AreaID: farmerEntity.Farm.AreaID,
 		}
 	}
 
@@ -34,12 +33,12 @@ func EntityFarmerToModel(entityFarmer *entity.Farmer) *model.Farmer {
 }
 
 // DB Model → Domain Entity
-func ModelFarmerToEntity(modelFarmer *model.Farmer) *entity.Farmer {
+func ModelToFarmerEntity(modelFarmer *model.Farmer) *farmer.Entity {
 	if modelFarmer == nil {
 		return nil
 	}
 
-	entityFarmer := &entity.Farmer{
+	farmerEntity := &farmer.Entity{
 		ID:        modelFarmer.ID,
 		Name:      modelFarmer.Name,
 		FarmID:    modelFarmer.FarmID,
@@ -49,32 +48,30 @@ func ModelFarmerToEntity(modelFarmer *model.Farmer) *entity.Farmer {
 
 	// Convert related entities - avoiding circular reference
 	if modelFarmer.Farm.ID != 0 {
-		entityFarmer.Farm = entity.Farm{
-			ID:        modelFarmer.Farm.ID,
-			Name:      modelFarmer.Farm.Name,
-			AreaID:    modelFarmer.Farm.AreaID,
-			CreatedAt: modelFarmer.Farm.CreatedAt,
-			UpdatedAt: modelFarmer.Farm.UpdatedAt,
+		farmerEntity.Farm = summary.Farm{
+			ID:     modelFarmer.Farm.ID,
+			Name:   modelFarmer.Farm.Name,
+			AreaID: modelFarmer.Farm.AreaID,
 		}
 	}
 
-	return entityFarmer
+	return farmerEntity
 }
 
-// Convert slice of models to entities
-func ModelFarmersToEntities(modelFarmers []model.Farmer) []entity.Farmer {
-	entities := make([]entity.Farmer, len(modelFarmers))
+// Model slice → Farmer Entity slice
+func ModelsToFarmerEntities(modelFarmers []model.Farmer) []farmer.Entity {
+	entities := make([]farmer.Entity, len(modelFarmers))
 	for i, model := range modelFarmers {
-		entities[i] = *ModelFarmerToEntity(&model)
+		entities[i] = *ModelToFarmerEntity(&model)
 	}
 	return entities
 }
 
-// Convert slice of entities to models
-func EntityFarmersToModels(entityFarmers []entity.Farmer) []model.Farmer {
-	models := make([]model.Farmer, len(entityFarmers))
-	for i, entity := range entityFarmers {
-		models[i] = *EntityFarmerToModel(&entity)
+// Farmer Entity slice → Model slice
+func FarmerEntitiesToModels(farmerEntities []farmer.Entity) []model.Farmer {
+	models := make([]model.Farmer, len(farmerEntities))
+	for i, entity := range farmerEntities {
+		models[i] = *FarmerEntityToModel(&entity)
 	}
 	return models
 }

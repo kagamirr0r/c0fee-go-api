@@ -1,32 +1,32 @@
 package entity_model
 
 import (
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/roast_level"
 	"c0fee-api/model"
 )
 
 // Domain Entity → DB Model
-func EntityRoastLevelToModel(entityRoastLevel *entity.RoastLevel) *model.RoastLevel {
-	if entityRoastLevel == nil {
+func RoastLevelEntityToModel(roastLevelEntity *roast_level.Entity) *model.RoastLevel {
+	if roastLevelEntity == nil {
 		return nil
 	}
 
 	return &model.RoastLevel{
-		ID:        entityRoastLevel.ID,
-		Name:      entityRoastLevel.Name,
-		Level:     entityRoastLevel.Level,
-		CreatedAt: entityRoastLevel.CreatedAt,
-		UpdatedAt: entityRoastLevel.UpdatedAt,
+		ID:        roastLevelEntity.ID,
+		Name:      roastLevelEntity.Name,
+		Level:     roastLevelEntity.Level,
+		CreatedAt: roastLevelEntity.CreatedAt,
+		UpdatedAt: roastLevelEntity.UpdatedAt,
 	}
 }
 
 // DB Model → Domain Entity
-func ModelRoastLevelToEntity(modelRoastLevel *model.RoastLevel) *entity.RoastLevel {
+func ModelToRoastLevelEntity(modelRoastLevel *model.RoastLevel) *roast_level.Entity {
 	if modelRoastLevel == nil {
 		return nil
 	}
 
-	return &entity.RoastLevel{
+	return &roast_level.Entity{
 		ID:        modelRoastLevel.ID,
 		Name:      modelRoastLevel.Name,
 		Level:     modelRoastLevel.Level,
@@ -35,20 +35,20 @@ func ModelRoastLevelToEntity(modelRoastLevel *model.RoastLevel) *entity.RoastLev
 	}
 }
 
-// Convert slice of models to entities
-func ModelRoastLevelsToEntities(modelRoastLevels []model.RoastLevel) []entity.RoastLevel {
-	entities := make([]entity.RoastLevel, len(modelRoastLevels))
+// Model slice → Roast Level Entity slice
+func ModelsToRoastLevelEntities(modelRoastLevels []model.RoastLevel) []roast_level.Entity {
+	entities := make([]roast_level.Entity, len(modelRoastLevels))
 	for i, model := range modelRoastLevels {
-		entities[i] = *ModelRoastLevelToEntity(&model)
+		entities[i] = *ModelToRoastLevelEntity(&model)
 	}
 	return entities
 }
 
-// Convert slice of entities to models
-func EntityRoastLevelsToModels(entityRoastLevels []entity.RoastLevel) []model.RoastLevel {
-	models := make([]model.RoastLevel, len(entityRoastLevels))
-	for i, entity := range entityRoastLevels {
-		models[i] = *EntityRoastLevelToModel(&entity)
+// Roast Level Entity slice → Model slice
+func RoastLevelEntitiesToModels(roastLevelEntities []roast_level.Entity) []model.RoastLevel {
+	models := make([]model.RoastLevel, len(roastLevelEntities))
+	for i, entity := range roastLevelEntities {
+		models[i] = *RoastLevelEntityToModel(&entity)
 	}
 	return models
 }

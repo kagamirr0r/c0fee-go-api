@@ -1,17 +1,18 @@
-package entity
+package bean_rating
 
 import (
+	"c0fee-api/domain/summary"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type BeanRating struct {
+type Entity struct {
 	ID         uint
 	BeanID     uint
-	Bean       Bean
+	Bean       summary.Bean
 	UserID     uuid.UUID
-	User       User
+	User       summary.User
 	Bitterness int
 	Acidity    int
 	Body       int
@@ -19,3 +20,5 @@ type BeanRating struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
+
+type Summary = summary.BeanRating
