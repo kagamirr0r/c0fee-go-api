@@ -1,8 +1,8 @@
-package entity
+package roaster
 
 import "time"
 
-type Roaster struct {
+type Entity struct {
 	ID        uint
 	Name      string
 	Address   string

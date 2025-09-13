@@ -1,8 +1,8 @@
-package entity
+package process_method
 
 import "time"
 
-type ProcessMethod struct {
+type Entity struct {
 	ID        uint
 	Name      string
 	CreatedAt time.Time

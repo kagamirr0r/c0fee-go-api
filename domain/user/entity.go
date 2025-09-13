@@ -1,4 +1,4 @@
-package entity
+package user
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
+type Entity struct {
 	ID        uuid.UUID
 	Name      string
 	AvatarKey string

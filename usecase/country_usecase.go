@@ -1,8 +1,7 @@
 package usecase
 
 import (
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/country"
 	"c0fee-api/dto"
 )
 
@@ -12,11 +11,11 @@ type ICountryUsecase interface {
 }
 
 type countryUsecase struct {
-	cr domainRepo.ICountryRepository
+	cr country.ICountryRepository
 }
 
 func (cu *countryUsecase) Read(id uint) (dto.CountryOutput, error) {
-	var storedCountry entity.Country
+	var storedCountry country.Entity
 	if err := cu.cr.GetById(&storedCountry, id); err != nil {
 		return dto.CountryOutput{}, err
 	}
@@ -25,7 +24,7 @@ func (cu *countryUsecase) Read(id uint) (dto.CountryOutput, error) {
 }
 
 func (cu *countryUsecase) List() (dto.CountriesOutput, error) {
-	var countries []entity.Country
+	var countries []country.Entity
 	err := cu.cr.List(&countries)
 	if err != nil {
 		return dto.CountriesOutput{}, err
@@ -43,9 +42,9 @@ func (cu *countryUsecase) List() (dto.CountriesOutput, error) {
 	return dto.CountriesOutput{Countries: countryResponses, Count: uint(len(countries))}, nil
 }
 
-func (cu *countryUsecase) convertToCountryResponse(country *entity.Country) dto.CountryOutput {
-	areas := make([]dto.AreaListOutput, len(country.Areas))
-	for i, area := range country.Areas {
+func (cu *countryUsecase) convertToCountryResponse(countryEntity *country.Entity) dto.CountryOutput {
+	areas := make([]dto.AreaListOutput, len(countryEntity.Areas))
+	for i, area := range countryEntity.Areas {
 		areas[i] = dto.AreaListOutput{
 			ID:   area.ID,
 			Name: area.Name,
@@ -53,13 +52,13 @@ func (cu *countryUsecase) convertToCountryResponse(country *entity.Country) dto.
 	}
 
 	return dto.CountryOutput{
-		ID:    country.ID,
-		Name:  country.Name,
-		Code:  country.Code,
+		ID:    countryEntity.ID,
+		Name:  countryEntity.Name,
+		Code:  countryEntity.Code,
 		Areas: areas,
 	}
 }
 
-func NewCountryUsecase(cr domainRepo.ICountryRepository) ICountryUsecase {
+func NewCountryUsecase(cr country.ICountryRepository) ICountryUsecase {
 	return &countryUsecase{cr}
 }

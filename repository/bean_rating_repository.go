@@ -2,8 +2,7 @@ package repository
 
 import (
 	"c0fee-api/common/converter/entity_model"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/bean_rating"
 	"c0fee-api/model"
 
 	"gorm.io/gorm"
@@ -13,8 +12,8 @@ type beanRatingRepository struct {
 	db *gorm.DB
 }
 
-func (brr *beanRatingRepository) Create(domainBeanRating *entity.BeanRating) error {
-	modelBeanRating := entity_model.EntityBeanRatingToModel(domainBeanRating)
+func (brr *beanRatingRepository) Create(domainBeanRating *bean_rating.Entity) error {
+	modelBeanRating := entity_model.BeanRatingEntityToModel(domainBeanRating)
 	if err := brr.db.Create(modelBeanRating).Error; err != nil {
 		return err
 	}
@@ -27,7 +26,7 @@ func (brr *beanRatingRepository) Create(domainBeanRating *entity.BeanRating) err
 	return nil
 }
 
-func (brr *beanRatingRepository) GetByBeanID(domainBeanRatings *[]entity.BeanRating, beanID uint) error {
+func (brr *beanRatingRepository) GetByBeanID(domainBeanRatings *[]bean_rating.Entity, beanID uint) error {
 	var modelBeanRatings []model.BeanRating
 	if err := brr.db.
 		Preload("User").
@@ -37,12 +36,12 @@ func (brr *beanRatingRepository) GetByBeanID(domainBeanRatings *[]entity.BeanRat
 	}
 
 	// Convert model slice to domain entity slice
-	*domainBeanRatings = entity_model.ModelBeanRatingsToEntities(modelBeanRatings)
+	*domainBeanRatings = entity_model.ModelsToBeanRatingEntities(modelBeanRatings)
 	return nil
 }
 
-func (brr *beanRatingRepository) UpdateByID(domainBeanRating *entity.BeanRating) error {
-	modelBeanRating := entity_model.EntityBeanRatingToModel(domainBeanRating)
+func (brr *beanRatingRepository) UpdateByID(domainBeanRating *bean_rating.Entity) error {
+	modelBeanRating := entity_model.BeanRatingEntityToModel(domainBeanRating)
 	if err := brr.db.Save(modelBeanRating).Error; err != nil {
 		return err
 	}
@@ -53,6 +52,6 @@ func (brr *beanRatingRepository) UpdateByID(domainBeanRating *entity.BeanRating)
 	return nil
 }
 
-func NewBeanRatingRepository(db *gorm.DB) domainRepo.IBeanRatingRepository {
+func NewBeanRatingRepository(db *gorm.DB) bean_rating.IBeanRatingRepository {
 	return &beanRatingRepository{db}
 }

@@ -2,8 +2,7 @@ package usecase
 
 import (
 	"c0fee-api/common"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/roaster"
 	"c0fee-api/dto"
 	"c0fee-api/infrastructure/s3"
 )
@@ -13,12 +12,12 @@ type IRoasterUsecase interface {
 }
 
 type roasterUsecase struct {
-	rr        domainRepo.IRoasterRepository
+	rr        roaster.IRoasterRepository
 	s3Service s3.IS3Service
 }
 
 func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, error) {
-	var roasters []entity.Roaster
+	var roasters []roaster.Entity
 
 	// パラメータが存在する場合は検索を使用、そうでなければリスト全体を取得
 	if params.NameLike != "" || params.Limit > 0 {
@@ -34,20 +33,20 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 	}
 
 	roastersResponse := make([]dto.RoasterOutput, len(roasters))
-	for i, roaster := range roasters {
+	for i, roasterEntity := range roasters {
 		var imageURL *string
-		if roaster.ImageKey != nil && *roaster.ImageKey != "" {
-			url, err := ru.s3Service.GenerateRoasterImageURL(*roaster.ImageKey)
+		if roasterEntity.ImageKey != nil && *roasterEntity.ImageKey != "" {
+			url, err := ru.s3Service.GenerateRoasterImageURL(*roasterEntity.ImageKey)
 			if err == nil && url != "" {
 				imageURL = &url
 			}
 		}
 
 		roastersResponse[i] = dto.RoasterOutput{
-			ID:       roaster.ID,
-			Name:     roaster.Name,
-			Address:  roaster.Address,
-			WebURL:   roaster.WebURL,
+			ID:       roasterEntity.ID,
+			Name:     roasterEntity.Name,
+			Address:  roasterEntity.Address,
+			WebURL:   roasterEntity.WebURL,
 			ImageURL: imageURL,
 		}
 	}
@@ -55,6 +54,6 @@ func (ru *roasterUsecase) List(params common.QueryParams) (dto.RoastersOutput, e
 	return dto.RoastersOutput{Roasters: roastersResponse, Count: uint(len(roasters))}, nil
 }
 
-func NewRoasterUsecase(rr domainRepo.IRoasterRepository, s3Service s3.IS3Service) IRoasterUsecase {
+func NewRoasterUsecase(rr roaster.IRoasterRepository, s3Service s3.IS3Service) IRoasterUsecase {
 	return &roasterUsecase{rr, s3Service}
 }

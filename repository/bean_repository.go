@@ -3,8 +3,7 @@ package repository
 import (
 	"c0fee-api/common"
 	"c0fee-api/common/converter/entity_model"
-	"c0fee-api/domain/entity"
-	domainRepo "c0fee-api/domain/repository"
+	"c0fee-api/domain/bean"
 	"c0fee-api/model"
 
 	"github.com/google/uuid"
@@ -15,7 +14,7 @@ type beanRepository struct {
 	db *gorm.DB
 }
 
-func (br *beanRepository) GetById(domainBean *entity.Bean, id uint) error {
+func (br *beanRepository) GetById(domainBean *bean.Entity, id uint) error {
 	var modelBean model.Bean
 	if err := br.db.
 		Preload("User").
@@ -35,12 +34,12 @@ func (br *beanRepository) GetById(domainBean *entity.Bean, id uint) error {
 	}
 
 	// Convert model to domain entity
-	entityBean := entity_model.ModelBeanToEntity(&modelBean)
+	entityBean := entity_model.ModelToBeanEntity(&modelBean)
 	*domainBean = *entityBean
 	return nil
 }
 
-func (br *beanRepository) GetBeansByUserId(domainBeans *[]entity.Bean, userID uuid.UUID, params common.QueryParams) error {
+func (br *beanRepository) GetBeansByUserId(domainBeans *[]bean.Entity, userID uuid.UUID, params common.QueryParams) error {
 	limit := 10 // デフォルトの取得件数
 	if params.Limit > 0 {
 		limit = params.Limit
@@ -65,11 +64,11 @@ func (br *beanRepository) GetBeansByUserId(domainBeans *[]entity.Bean, userID uu
 	}
 
 	// Convert model slice to domain entity slice
-	*domainBeans = entity_model.ModelBeansToEntities(modelBeans)
+	*domainBeans = entity_model.ModelsToBeanEntities(modelBeans)
 	return nil
 }
 
-func (br *beanRepository) SearchBeansByUserId(domainBeans *[]entity.Bean, userID uuid.UUID, params common.QueryParams) error {
+func (br *beanRepository) SearchBeansByUserId(domainBeans *[]bean.Entity, userID uuid.UUID, params common.QueryParams) error {
 	query := br.db.
 		Preload("User").
 		Preload("Roaster").
@@ -117,12 +116,12 @@ func (br *beanRepository) SearchBeansByUserId(domainBeans *[]entity.Bean, userID
 	}
 
 	// Convert model slice to domain entity slice
-	*domainBeans = entity_model.ModelBeansToEntities(modelBeans)
+	*domainBeans = entity_model.ModelsToBeanEntities(modelBeans)
 	return nil
 }
 
-func (br *beanRepository) Create(domainBean *entity.Bean) error {
-	modelBean := entity_model.EntityBeanToModel(domainBean)
+func (br *beanRepository) Create(domainBean *bean.Entity) error {
+	modelBean := entity_model.BeanEntityToModel(domainBean)
 	if err := br.db.Create(modelBean).Error; err != nil {
 		return err
 	}
@@ -135,8 +134,8 @@ func (br *beanRepository) Create(domainBean *entity.Bean) error {
 	return nil
 }
 
-func (br *beanRepository) Update(domainBean *entity.Bean) error {
-	modelBean := entity_model.EntityBeanToModel(domainBean)
+func (br *beanRepository) Update(domainBean *bean.Entity) error {
+	modelBean := entity_model.BeanEntityToModel(domainBean)
 	if err := br.db.Save(modelBean).Error; err != nil {
 		return err
 	}
@@ -173,6 +172,6 @@ func (br *beanRepository) SetVarieties(beanID uint, varietyIDs []uint) error {
 	return nil
 }
 
-func NewBeanRepository(db *gorm.DB) domainRepo.IBeanRepository {
+func NewBeanRepository(db *gorm.DB) bean.IBeanRepository {
 	return &beanRepository{db}
 }

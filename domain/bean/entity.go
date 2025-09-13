@@ -1,6 +1,7 @@
-package entity
+package bean
 
 import (
+	"c0fee-api/domain/summary"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,30 +25,32 @@ var AllCurrencies = []Currency{
 	KRW,
 }
 
-type Bean struct {
+type Entity struct {
 	ID              uint
 	UserID          uuid.UUID
-	User            User
+	User            summary.User
 	RoasterID       uint
-	Roaster         Roaster
+	Roaster         summary.Roaster
 	CountryID       uint
-	Country         Country
+	Country         summary.Country
 	AreaID          *uint
-	Area            *Area
+	Area            *summary.Area
 	FarmID          *uint
-	Farm            *Farm
+	Farm            *summary.Farm
 	FarmerID        *uint
-	Farmer          *Farmer
-	Varieties       []Variety
+	Farmer          *summary.Farmer
+	Varieties       []summary.Variety
 	ProcessMethodID *uint
-	ProcessMethod   *ProcessMethod
+	ProcessMethod   *summary.ProcessMethod
 	Name            *string
 	RoastLevelID    uint
-	RoastLevel      RoastLevel
+	RoastLevel      summary.RoastLevel
 	Price           *uint
 	Currency        Currency
 	ImageKey        *string
-	BeanRatings     []BeanRating
+	BeanRatings     []summary.BeanRating
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
+
+// External entity references - these will be imported from their respective domains

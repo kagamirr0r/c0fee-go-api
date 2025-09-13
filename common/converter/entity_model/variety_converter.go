@@ -1,12 +1,12 @@
 package entity_model
 
 import (
-	"c0fee-api/domain/entity"
+	"c0fee-api/domain/variety"
 	"c0fee-api/model"
 )
 
 // Domain Entity → DB Model
-func EntityVarietyToModel(entityVariety *entity.Variety) *model.Variety {
+func VarietyEntityToModel(entityVariety *variety.Entity) *model.Variety {
 	if entityVariety == nil {
 		return nil
 	}
@@ -20,12 +20,12 @@ func EntityVarietyToModel(entityVariety *entity.Variety) *model.Variety {
 }
 
 // DB Model → Domain Entity
-func ModelVarietyToEntity(modelVariety *model.Variety) *entity.Variety {
+func ModelToVarietyEntity(modelVariety *model.Variety) *variety.Entity {
 	if modelVariety == nil {
 		return nil
 	}
 
-	return &entity.Variety{
+	return &variety.Entity{
 		ID:        modelVariety.ID,
 		Name:      modelVariety.Name,
 		CreatedAt: modelVariety.CreatedAt,
@@ -34,19 +34,19 @@ func ModelVarietyToEntity(modelVariety *model.Variety) *entity.Variety {
 }
 
 // Convert slice of models to entities
-func ModelVarietiesToEntities(modelVarieties []model.Variety) []entity.Variety {
-	entities := make([]entity.Variety, len(modelVarieties))
+func ModelsToVarietyEntities(modelVarieties []model.Variety) []variety.Entity {
+	entities := make([]variety.Entity, len(modelVarieties))
 	for i, model := range modelVarieties {
-		entities[i] = *ModelVarietyToEntity(&model)
+		entities[i] = *ModelToVarietyEntity(&model)
 	}
 	return entities
 }
 
 // Convert slice of entities to models
-func EntityVarietiesToModels(entityVarieties []entity.Variety) []model.Variety {
+func VarietyEntitiesToModels(entityVarieties []variety.Entity) []model.Variety {
 	models := make([]model.Variety, len(entityVarieties))
 	for i, entity := range entityVarieties {
-		models[i] = *EntityVarietyToModel(&entity)
+		models[i] = *VarietyEntityToModel(&entity)
 	}
 	return models
 }
