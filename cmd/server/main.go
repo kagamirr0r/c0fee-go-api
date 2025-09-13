@@ -36,7 +36,7 @@ func main() {
 	countryUsecase := usecase.NewCountryUsecase(countryRepository)
 	farmUsecase := usecase.NewFarmUsecase(farmRepository)
 	processMethodUsecase := usecase.NewProcessMethodUsecase(processMethodRepository)
-	roasterUsecase := usecase.NewRoasterUsecase(roasterRepository, s3Service)
+	roasterUsecase := usecase.NewRoasterUsecase(userRepository, roasterRepository, beanRepository, s3Service)
 	roastLevelUsecase := usecase.NewRoastLevelUsecase(roastLevelRepository)
 	userUseCase := usecase.NewUserUsecase(userRepository, beanRepository, s3Service)
 	varietyUsecase := usecase.NewVarietyUsecase(varietyRepository)

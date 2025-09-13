@@ -49,6 +49,53 @@ func (rr *roasterRepository) Search(domainRoasters *[]roaster.Entity, params com
 	return nil
 }
 
+func (rr *roasterRepository) GetById(domainRoaster *roaster.Entity, id uint) error {
+	var modelRoaster model.Roaster
+	if err := rr.db.
+		Preload("Beans").
+		Preload("Beans.User").
+		Preload("Beans.Roaster").
+		Preload("Beans.Country").
+		Preload("Beans.Area").
+		Preload("Beans.Farm").
+		Preload("Beans.Farmer").
+		Preload("Beans.RoastLevel").
+		Preload("Beans.ProcessMethod").
+		Preload("Beans.Varieties").
+		Preload("Beans.BeanRatings").
+		Preload("Beans.BeanRatings.User").
+		Where("id = ?", id).
+		First(&modelRoaster).
+		Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelToRoasterEntity(&modelRoaster)
+	return nil
+}
+
+func (rr *roasterRepository) Create(domainRoaster *roaster.Entity) error {
+	modelRoaster := entity_model.RoasterEntityToModel(domainRoaster)
+
+	if err := rr.db.Create(modelRoaster).Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelToRoasterEntity(modelRoaster)
+	return nil
+}
+
+func (rr *roasterRepository) Update(domainRoaster *roaster.Entity) error {
+	modelRoaster := entity_model.RoasterEntityToModel(domainRoaster)
+
+	if err := rr.db.Save(modelRoaster).Error; err != nil {
+		return err
+	}
+
+	*domainRoaster = *entity_model.ModelToRoasterEntity(modelRoaster)
+	return nil
+}
+
 func NewRoasterRepository(db *gorm.DB) roaster.IRoasterRepository {
 	return &roasterRepository{db}
 }

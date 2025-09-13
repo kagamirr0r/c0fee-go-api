@@ -20,6 +20,7 @@ type IS3Service interface {
 	GenerateRoasterImageURL(imageKey string) (string, error)
 	RemoveBeanImage(imageKey string) error
 	UploadBeanImage(beanID uint, imageFile *multipart.FileHeader) (string, error)
+	UploadRoasterImage(roasterID uint, imageFile *multipart.FileHeader) (string, error)
 }
 
 type s3Service struct {
@@ -137,6 +138,63 @@ func (s *s3Service) RemoveBeanImage(imageKey string) error {
 	fmt.Println("Removed Bean Image:", objectKey)
 
 	return nil
+}
+
+func (s *s3Service) UploadRoasterImage(roasterID uint, imageFile *multipart.FileHeader) (string, error) {
+	if imageFile == nil {
+		return "", fmt.Errorf("image file is required")
+	}
+
+	bucket := os.Getenv("S3_BUCKET")
+	if bucket == "" {
+		return "", fmt.Errorf("S3_BUCKET environment variable is not set")
+	}
+
+	// ファイルを開く
+	file, err := imageFile.Open()
+	if err != nil {
+		return "", fmt.Errorf("failed to open image file: %w", err)
+	}
+	defer file.Close()
+
+	// ファイル拡張子を取得
+	ext := strings.ToLower(filepath.Ext(imageFile.Filename))
+
+	// ユニークなファイル名を生成
+	uniqueID := uuid.New().String()
+	imageKey := fmt.Sprintf("%d/%s_%s", roasterID, uniqueID, ext)
+	fmt.Println("Generated roaster image key:", imageKey)
+	objectKey := "roasters/" + imageKey
+
+	// Content-Typeを設定
+	var contentType string
+	switch ext {
+	case ".jpg", ".jpeg":
+		contentType = "image/jpeg"
+	case ".png":
+		contentType = "image/png"
+	case ".webp":
+		contentType = "image/webp"
+	default:
+		contentType = "application/octet-stream"
+	}
+
+	// アップロード
+	_, err = s.client.PutObject(
+		context.Background(),
+		bucket,
+		objectKey,
+		file,
+		imageFile.Size,
+		minio.PutObjectOptions{
+			ContentType: contentType,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload roaster image: %w", err)
+	}
+
+	return imageKey, nil
 }
 
 func NewS3Service() (IS3Service, error) {

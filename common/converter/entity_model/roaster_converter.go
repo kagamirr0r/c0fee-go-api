@@ -2,6 +2,7 @@ package entity_model
 
 import (
 	"c0fee-api/domain/roaster"
+	"c0fee-api/domain/summary"
 	"c0fee-api/model"
 )
 
@@ -34,6 +35,7 @@ func ModelToRoasterEntity(modelRoaster *model.Roaster) *roaster.Entity {
 		Address:   modelRoaster.Address,
 		WebURL:    modelRoaster.WebURL,
 		ImageKey:  modelRoaster.ImageKey,
+		Beans:     modelsToBeanSummaries(modelRoaster.Beans),
 		CreatedAt: modelRoaster.CreatedAt,
 		UpdatedAt: modelRoaster.UpdatedAt,
 	}
@@ -55,4 +57,20 @@ func RoasterEntitiesToModels(roasterEntities []roaster.Entity) []model.Roaster {
 		models[i] = *RoasterEntityToModel(&entity)
 	}
 	return models
+}
+
+// Helper function to convert Model Beans to Bean Summaries
+func modelsToBeanSummaries(modelBeans []model.Bean) []summary.Bean {
+	if len(modelBeans) == 0 {
+		return nil
+	}
+	
+	summaries := make([]summary.Bean, len(modelBeans))
+	for i, bean := range modelBeans {
+		summaries[i] = summary.Bean{
+			ID:   bean.ID,
+			Name: bean.Name,
+		}
+	}
+	return summaries
 }

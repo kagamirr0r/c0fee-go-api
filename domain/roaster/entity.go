@@ -1,6 +1,9 @@
 package roaster
 
-import "time"
+import (
+	"c0fee-api/domain/bean"
+	"time"
+)
 
 type Entity struct {
 	ID        uint
@@ -8,6 +11,7 @@ type Entity struct {
 	Address   string
 	WebURL    string
 	ImageKey  *string
+	Beans     []bean.Summary
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

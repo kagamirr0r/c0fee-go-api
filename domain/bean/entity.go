@@ -53,4 +53,6 @@ type Entity struct {
 	UpdatedAt       time.Time
 }
 
+type Summary = summary.Bean
+
 // External entity references - these will be imported from their respective domains
